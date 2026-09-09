@@ -500,7 +500,7 @@ export default function ProcessorBidsPage() {
                 placeholder="e.g. Nagpur Fresh Juice Processing Ltd."
                 value={newBidForm.processorName}
                 onChange={(e) => setNewBidForm({ ...newBidForm, processorName: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                className="w-full border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
               />
             </div>
 
@@ -510,7 +510,7 @@ export default function ProcessorBidsPage() {
                 <select
                   value={newBidForm.commodity}
                   onChange={(e) => setNewBidForm({ ...newBidForm, commodity: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 bg-white focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 >
                   <option value="Orange">🍊 Orange / Citrus</option>
                   <option value="Tomato">🍅 Tomato (Processing/Paste)</option>
@@ -530,7 +530,7 @@ export default function ProcessorBidsPage() {
                   placeholder="e.g. 15.00"
                   value={newBidForm.pricePerKg}
                   onChange={(e) => setNewBidForm({ ...newBidForm, pricePerKg: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
             </div>
@@ -545,7 +545,7 @@ export default function ProcessorBidsPage() {
                   placeholder="e.g. 60"
                   value={newBidForm.maxDistanceKm}
                   onChange={(e) => setNewBidForm({ ...newBidForm, maxDistanceKm: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
 
@@ -558,7 +558,7 @@ export default function ProcessorBidsPage() {
                   placeholder="e.g. 30"
                   value={newBidForm.capacityTonsPerDay}
                   onChange={(e) => setNewBidForm({ ...newBidForm, capacityTonsPerDay: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
             </div>
@@ -571,7 +571,7 @@ export default function ProcessorBidsPage() {
                   placeholder="e.g. MIDC Butibori, Nagpur"
                   value={newBidForm.plantLocation}
                   onChange={(e) => setNewBidForm({ ...newBidForm, plantLocation: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
 
@@ -582,7 +582,7 @@ export default function ProcessorBidsPage() {
                   placeholder="e.g. +91 712 289000"
                   value={newBidForm.contactPhone}
                   onChange={(e) => setNewBidForm({ ...newBidForm, contactPhone: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
             </div>

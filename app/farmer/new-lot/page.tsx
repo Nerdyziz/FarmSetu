@@ -61,18 +61,18 @@ export default function NewLotPage() {
             {[
               {
                 icon: '1️⃣',
-                en: 'PACS operator will weigh and grade your produce',
-                hi: 'PACS संचालक आपकी फसल को तोलेंगे और जाँचेंगे',
+                en: 'PACS operator will weigh and grade your produce at hub',
+                hi: 'PACS संचालक आपकी फसल को तोलेंगे और गुणवत्ता जाँचेंगे',
               },
               {
                 icon: '2️⃣',
-                en: 'You will get a quality grade (A, B, or C)',
-                hi: 'आपको श्रेणी मिलेगी (A, B या C)',
+                en: 'Official Grade (A/B/C) & SHA-256 certificate issued (funds locked in escrow)',
+                hi: 'श्रेणी (A/B/C) व डिजिटल प्रमाण-पत्र जारी होगा (फंड एस्क्रो में सुरक्षित)',
               },
               {
                 icon: '3️⃣',
-                en: '70% of your money arrives within 24 hours',
-                hi: '70% पैसा 24 घंटे में आ जाएगा',
+                en: '70% advance released to your account upon truck booking & dispatch',
+                hi: 'ट्रक बुक होकर रवाना होते ही 70% अग्रिम आपके बैंक खाते में जमा होगा',
               },
             ].map((step, i) => (
               <div key={i} className="flex items-start gap-2 bg-gray-50 rounded-xl p-3">
@@ -139,7 +139,7 @@ export default function NewLotPage() {
           <select
             value={form.cropType}
             onChange={(e) => setForm({ ...form, cropType: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400"
           >
             <option value="Orange">{lang === 'hi' ? '🍊 संतरा' : '🍊 Orange'}</option>
             <option value="Tomato">{lang === 'hi' ? '🍅 टमाटर' : '🍅 Tomato'}</option>
@@ -158,7 +158,7 @@ export default function NewLotPage() {
             placeholder={lang === 'hi' ? 'जैसे: 500' : 'e.g. 500'}
             value={form.weightKg}
             onChange={(e) => setForm({ ...form, weightKg: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base text-gray-900 bg-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
         </div>
 
@@ -172,7 +172,7 @@ export default function NewLotPage() {
             placeholder={lang === 'hi' ? 'जैसे: 20' : 'e.g. 20'}
             value={form.crates}
             onChange={(e) => setForm({ ...form, crates: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base text-gray-900 bg-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
         </div>
 
@@ -186,7 +186,7 @@ export default function NewLotPage() {
             placeholder={lang === 'hi' ? 'जैसे: कुछ फल पके हैं, रात को तोड़ा था...' : 'e.g. Harvested last night, some early ripening...'}
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+            className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base text-gray-900 bg-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
           />
         </div>
 
@@ -206,9 +206,9 @@ export default function NewLotPage() {
         </div>
         {[
           { icon: '⚖️', en: 'Operator weighs crates at PACS hub', hi: 'PACS हब पर संचालक क्रेट तोलेंगे' },
-          { icon: '🔬', en: 'Quality checked by certified PACS operator', hi: 'प्रमाणित PACS संचालक गुणवत्ता जाँचेंगे' },
-          { icon: '🏆', en: 'Grade A, B or C assigned with certificate', hi: 'श्रेणी A, B या C मिलेगी — प्रमाण-पत्र के साथ' },
-          { icon: '💰', en: '70% money in 24 hours after PACS accepts', hi: 'PACS स्वीकृति के 24 घंटे में 70% पैसा' },
+          { icon: '🔬', en: 'Quality checked & graded with SHA-256 certificate', hi: 'प्रमाणित PACS संचालक गुणवत्ता जाँचेंगे व डिजिटल सर्टिफ़िकेट देंगे' },
+          { icon: '🔒', en: '100% Produce value secured in Escrow Rail', hi: '100% फसल का मूल्य बैंक एस्क्रो में सुरक्षित होगा' },
+          { icon: '🚛', en: '70% advance released when truck booking is confirmed', hi: 'ट्रक बुक होकर रवाना होते ही 70% अग्रिम खाते में जमा होगा' },
         ].map((s, i) => (
           <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
             <span className="text-xl">{s.icon}</span>

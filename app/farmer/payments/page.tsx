@@ -14,10 +14,10 @@ const ESCROW_STEPS = [
 ]
 
 const STEP_LABELS = {
-  step1: { en: 'Lot Accepted at PACS', hi: 'PACS में माल मिला ✅' },
-  step2: { en: '70% Released to Farmer', hi: '70% पैसा किसान को ✅' },
-  step3: { en: 'Buyer Confirmed Delivery', hi: 'खरीदार ने माल माना ✅' },
-  step4: { en: 'Remaining 30% Released', hi: 'बाकी 30% पैसा मिला 🎉' },
+  step1: { en: 'Lot Graded & 100% Escrow Secured', hi: 'लॉट ग्रेडिंग व 100% एस्क्रो लॉक ✅' },
+  step2: { en: '70% Advance Released on Truck Booking', hi: 'ट्रक बुकिंग पर 70% अग्रिम जारी ✅' },
+  step3: { en: 'Buyer Confirmed Delivery (Geofence)', hi: 'खरीदार द्वारा माल पुष्टि (जियोफेंस) ✅' },
+  step4: { en: 'Remaining 30% Balance Settled', hi: 'शेष 30% अंतिम भुगतान पूरा 🎉' },
 }
 
 export default function PaymentsPage() {
@@ -67,7 +67,9 @@ export default function PaymentsPage() {
             <div className="text-2xl font-bold text-green-700 mt-1">₹{totalEarned.toLocaleString('hi-IN')}</div>
           </div>
           <div className="mt-2 pt-2 border-t border-green-100 text-[11px] font-semibold text-green-800">
-            {myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
+            {totalEarned === 0
+              ? (lang === 'hi' ? '🔒 लॉट सुरक्षित (ट्रक बुकिंग पर 70%)' : '🔒 Graded (70% on Truck Booking)')
+              : myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
               ? (lang === 'hi' ? '🎉 100% पूरा मिला' : '🎉 100% Fully Settled')
               : (lang === 'hi' ? '✅ 70% अग्रिम प्राप्त' : '✅ 70% Advance Paid')}
           </div>
@@ -78,7 +80,9 @@ export default function PaymentsPage() {
             <div className="text-2xl font-bold text-orange-600 mt-1">₹{totalPending.toLocaleString('hi-IN')}</div>
           </div>
           <div className="mt-2 pt-2 border-t border-orange-100 text-[11px] font-semibold text-orange-700">
-            {myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
+            {totalEarned === 0
+              ? (lang === 'hi' ? '🔒 100% एस्क्रो में सुरक्षित' : '🔒 100% Secured in Escrow')
+              : myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
               ? (lang === 'hi' ? '✓ कोई बकाया नहीं' : '✓ Zero Pending (Nil)')
               : (lang === 'hi' ? '🔒 30% एस्क्रो में सुरक्षित' : '🔒 30% in Transit Escrow')}
           </div>
@@ -90,21 +94,26 @@ export default function PaymentsPage() {
         <div className="font-bold text-blue-800 mb-2">
           {lang === 'hi' ? 'ℹ️ पैसा कैसे मिलता है?' : 'ℹ️ How does payment work?'}
         </div>
-        <ul className="text-sm text-blue-700 space-y-1">
+        <ul className="text-sm text-blue-700 space-y-1.5">
           <li>
             {lang === 'hi'
-              ? '• आपका माल PACS में पहुँचते ही — 70% पैसा आपको 24 घंटे में मिलता है'
-              : '• As soon as lot is at PACS — 70% within 24 hours'}
+              ? '• PACS हब पर ग्रेडिंग होते ही — 100% राशि एस्क्रो में सुरक्षित लॉक हो जाती है'
+              : '• Graded at PACS Hub — 100% value locked safely in escrow'}
           </li>
           <li>
             {lang === 'hi'
-              ? '• बाकी 30% — जब खरीदार माल को मंजूरी दे देता है'
-              : '• Remaining 30% — after buyer confirms delivery'}
+              ? '• जब ऑपरेटर लॉट के लिए ट्रक बुक करता है — 70% अग्रिम राशि तुरंत बैंक में जारी होती है'
+              : '• When operator books truck for the lot — 70% advance released immediately to bank'}
           </li>
           <li>
             {lang === 'hi'
-              ? '• पैसा पूरी तरह सुरक्षित (Escrow में) रहता है'
-              : '• Money is fully secured in escrow'}
+              ? '• बाकी 30% — जब गंतव्य पर खरीदार माल प्राप्त करता है (जियोफेंस पुष्टि)'
+              : '• Remaining 30% — released upon buyer delivery confirmation (Geofence)'}
+          </li>
+          <li>
+            {lang === 'hi'
+              ? '• पैसा पूरी तरह स्मार्ट एस्क्रो कॉन्ट्रैक्ट द्वारा सुरक्षित रहता है'
+              : '• Entire payment is secured by cryptographic escrow contract'}
           </li>
         </ul>
       </div>
@@ -164,12 +173,12 @@ export default function PaymentsPage() {
                     </span>
                     {step.key === 'step2' && done && (
                       <span className="ml-auto text-sm font-bold text-green-700">
-                        ₹{lot.paid70.toLocaleString('hi-IN')}
+                        ₹{Math.round(lot.totalValue * 0.7).toLocaleString('hi-IN')}
                       </span>
                     )}
                     {step.key === 'step4' && done && (
                       <span className="ml-auto text-sm font-bold text-green-700">
-                        ₹{(lot.totalValue - lot.paid70).toLocaleString('hi-IN')}
+                        ₹{(lot.totalValue - Math.round(lot.totalValue * 0.7)).toLocaleString('hi-IN')}
                       </span>
                     )}
                   </div>

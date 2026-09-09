@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #f8fafc;
+    --foreground: #0f172a;
   }
 }
 
@@ -16,6 +16,32 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Force dark black text and dark visible placeholders across all inputs, textareas, selects */
+input, select, textarea {
+  color: #111827 !important;
+  background-color: #ffffff;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #374151 !important;
+  opacity: 0.9 !important;
+}
+
+::-webkit-input-placeholder {
+  color: #374151 !important;
+  opacity: 0.9 !important;
+}
+
+::-moz-placeholder {
+  color: #374151 !important;
+  opacity: 0.9 !important;
+}
+
+:-ms-input-placeholder {
+  color: #374151 !important;
+  opacity: 0.9 !important;
 }
 
 /* Farmer mode: larger base font for readability */

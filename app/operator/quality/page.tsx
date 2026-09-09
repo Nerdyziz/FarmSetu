@@ -590,7 +590,7 @@ export default function OperatorQualityPage() {
                 placeholder={`Farmer declared: ${selectedLot.weightKg} kg`}
                 value={form.actualWeightKg}
                 onChange={(e) => setForm({ ...form, actualWeightKg: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
               />
               {form.actualWeightKg && Math.abs(parseFloat(form.actualWeightKg) - selectedLot.weightKg) > selectedLot.weightKg * 0.05 && (
                 <div className="text-xs text-red-600 mt-1">⚠️ {lang === 'hi' ? 'वजन में 5% से अधिक अंतर - पुनः मिलान आवश्यक' : 'Weight mismatch >5% with farmer declaration'}</div>
@@ -607,7 +607,7 @@ export default function OperatorQualityPage() {
                 placeholder="e.g. 11.5"
                 value={form.brixPct}
                 onChange={(e) => setForm({ ...form, brixPct: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
               />
             </div>
 
@@ -621,7 +621,7 @@ export default function OperatorQualityPage() {
                 placeholder="e.g. 4.2"
                 value={form.blemishPct}
                 onChange={(e) => setForm({ ...form, blemishPct: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
               />
             </div>
 
@@ -635,13 +635,13 @@ export default function OperatorQualityPage() {
                 placeholder="e.g. 92"
                 value={form.uniformity}
                 onChange={(e) => setForm({ ...form, uniformity: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
               />
             </div>
           </div>
 
           {/* Grade thresholds guide */}
-          <div className="bg-gray-50 rounded-xl p-3 mb-5 text-xs border border-gray-200">
+          <div className="bg-gray-50 rounded-xl p-3 mb-4 text-xs border border-gray-200">
             <div className="font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
               <span>{lang === 'hi' ? 'सरकारी Agmarknet / FSSAI श्रेणी मापदंड:' : 'Agmarknet / FSSAI Official Grade Thresholds:'}</span>
               <span className="text-gray-400 text-[10px]">Algorithm: ATC-YOLOv5 + ResNet50 NIR</span>
@@ -659,6 +659,19 @@ export default function OperatorQualityPage() {
             </div>
           </div>
 
+          {/* Escrow note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-xs text-blue-900 flex items-start gap-2">
+            <span className="text-base">ℹ️</span>
+            <div>
+              <strong>{lang === 'hi' ? 'एस्क्रो फंड प्रक्रिया:' : 'Escrow Fund Protocol:'}</strong>
+              <span className="ml-1">
+                {lang === 'hi'
+                  ? 'सर्टिफिकेट जारी होने पर 100% फंड एस्क्रो में सुरक्षित हो जाता है। किसान को 70% अग्रिम तब जारी होगा जब इस लॉट का ट्रक बुक व कन्फर्म होगा।'
+                  : 'Certifying locks 100% produce value in the escrow vault. The 70% advance is released to the farmer when a consolidated truck is booked & dispatched.'}
+              </span>
+            </div>
+          </div>
+
           <button
             onClick={handleGrade}
             disabled={grading || !form.brixPct || !form.blemishPct || !form.uniformity}
@@ -667,7 +680,7 @@ export default function OperatorQualityPage() {
             {grading ? (
               <span>⏳ {lang === 'hi' ? 'SHA-256 सर्टिफिकेट और श्रेणी तैयार हो रही है…' : 'Generating SHA-256 Certificate & Grade…'}</span>
             ) : (
-              <span>✅ {lang === 'hi' ? 'प्रमाणित श्रेणी जारी करें (70% एस्क्रो लॉक ट्रिगर)' : 'Certify Lot & Issue SHA-256 Quality Certificate'}</span>
+              <span>✅ {lang === 'hi' ? 'प्रमाणित श्रेणी जारी करें (एस्क्रो सुरक्षित करें — ट्रक बुकिंग पर 70% अग्रिम)' : 'Certify Lot & Lock in Escrow (70% releases on truck booking)'}</span>
             )}
           </button>
         </div>

@@ -282,7 +282,11 @@ export async function fetchLots(): Promise<{ lots: LotRecord[]; isLiveDb: boolea
                   ...l,
                   escrowState: escrow,
                   status: escrow === 'FULLY_RELEASED' ? 'delivered' : sim.status === 'diverted' ? 'diverted' : l.status,
-                  paid70: escrow === 'FULLY_RELEASED' ? l.totalValue : (l.paid70 || Math.round(l.totalValue * 0.7)),
+                  paid70: escrow === 'FULLY_RELEASED'
+                    ? l.totalValue
+                    : escrow === 'PARTIAL_RELEASED'
+                      ? Math.round(l.totalValue * 0.7)
+                      : 0,
                 }
               }
               return l
@@ -301,7 +305,11 @@ export async function fetchLots(): Promise<{ lots: LotRecord[]; isLiveDb: boolea
                 ...l,
                 escrowState: escrow,
                 status: escrow === 'FULLY_RELEASED' ? 'delivered' : sim.status === 'diverted' ? 'diverted' : l.status,
-                paid70: escrow === 'FULLY_RELEASED' ? l.totalValue : (l.paid70 || Math.round(l.totalValue * 0.7)),
+                paid70: escrow === 'FULLY_RELEASED'
+                  ? l.totalValue
+                  : escrow === 'PARTIAL_RELEASED'
+                    ? Math.round(l.totalValue * 0.7)
+                    : 0,
               }
             }
             return l
@@ -324,7 +332,11 @@ export async function fetchLots(): Promise<{ lots: LotRecord[]; isLiveDb: boolea
           ...l,
           escrowState: escrow,
           status: escrow === 'FULLY_RELEASED' ? 'delivered' : sim.status === 'diverted' ? 'diverted' : l.status,
-          paid70: escrow === 'FULLY_RELEASED' ? l.totalValue : (l.paid70 || Math.round(l.totalValue * 0.7)),
+          paid70: escrow === 'FULLY_RELEASED'
+            ? l.totalValue
+            : escrow === 'PARTIAL_RELEASED'
+              ? Math.round(l.totalValue * 0.7)
+              : 0,
         }
       }
       return l
@@ -420,10 +432,13 @@ export async function recordLotGrade(
   const price = gradeResult.grade === 'A' ? 40 : gradeResult.grade === 'B' ? 30 : 15
   const newStatus = gradeResult.grade === 'C' ? 'diverted' : 'at-pacs'
 
+  let lotTotalValue = 0
+
   localLots = localLots.map((l) => {
     if (l.id === lotId) {
       const finalWeight = actualWeightKg || l.weightKg
       const total = finalWeight * price
+      lotTotalValue = total
       return {
         ...l,
         weightKg: finalWeight,
@@ -436,11 +451,24 @@ export async function recordLotGrade(
         status: newStatus,
         pricePerKg: price,
         totalValue: total,
-        paid70: Math.round(total * 0.7),
+        paid70: 0, // 70% advance is strictly released when truck is booked, NOT at grading!
         escrowState: 'LOCKED',
       }
     }
     return l
+  })
+
+  // Log transition to LOCKED
+  await logEscrowTransition(
+    lotId,
+    'PENDING',
+    'LOCKED',
+    lotTotalValue,
+    `Quality Graded (Grade ${gradeResult.grade}) — 100% Value Locked in Escrow (70% released upon truck booking)`
+  )
+
+  saveSimulationState({
+    lotEscrowStates: { [lotId]: 'LOCKED' },
   })
 
   if (isSupabaseConfigured()) {
@@ -459,7 +487,7 @@ export async function recordLotGrade(
           escrow_state: 'LOCKED',
           price_per_kg: price,
           total_value: total,
-          paid_70: Math.round(total * 0.7),
+          paid_70: 0, // 0 until truck booking
           weight_kg: finalWeight,
           brix_pct: brixPct ?? null,
           blemish_pct: blemishPct ?? null,
@@ -495,13 +523,22 @@ export async function updateLotStatus(
   lotId: string,
   status: 'pending' | 'at-pacs' | 'shipped' | 'delivered' | 'diverted'
 ): Promise<{ success: boolean }> {
-  localLots = localLots.map((l) =>
-    l.id === lotId ? { ...l, status } : l
-  )
+  localLots = localLots.map((l) => {
+    if (l.id === lotId) {
+      const escrowState = status === 'shipped' ? 'PARTIAL_RELEASED' : status === 'delivered' ? 'FULLY_RELEASED' : l.escrowState
+      const paid70 = status === 'shipped' ? Math.round(l.totalValue * 0.7) : status === 'delivered' ? l.totalValue : l.paid70
+      return { ...l, status, escrowState, paid70 }
+    }
+    return l
+  })
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient()
-      await supabase.from('lots').update({ status }).eq('id', lotId)
+      const lot = localLots.find((l) => l.id === lotId)
+      await supabase.from('lots').update({ 
+        status,
+        ...(lot ? { escrow_state: lot.escrowState, paid_70: lot.paid70 } : {})
+      }).eq('id', lotId)
       return { success: true }
     } catch (e) {
       console.warn('updateLotStatus failed:', e)
@@ -693,10 +730,46 @@ export async function createShipmentBooking(shipment: {
 
   localShipments = [newShipment, ...localShipments]
 
-  // Update lot status to 'shipped'
-  localLots = localLots.map((l) =>
-    shipment.lotIds.includes(l.id) ? { ...l, status: 'shipped' } : l
-  )
+  // Update lot status to 'shipped', escrowState to 'PARTIAL_RELEASED', and paid70 to 70% of totalValue
+  localLots = localLots.map((l) => {
+    if (shipment.lotIds.includes(l.id)) {
+      const advance70 = Math.round(l.totalValue * 0.7)
+      return {
+        ...l,
+        status: 'shipped',
+        escrowState: 'PARTIAL_RELEASED',
+        paid70: advance70,
+      }
+    }
+    return l
+  })
+
+  // Log escrow transition: Truck Booking Confirmed -> 70% Farmer Advance Released
+  for (const lotId of shipment.lotIds) {
+    const lot = localLots.find((l) => l.id === lotId)
+    const advance70 = lot?.paid70 || 0
+    await logEscrowTransition(
+      lotId,
+      'LOCKED',
+      'PARTIAL_RELEASED',
+      advance70,
+      `Truck Booking Confirmed (${shipment.truckId}) — 70% Farmer Advance Released to Bank Account`
+    )
+  }
+
+  // Update simulation state to notify real-time listeners across dashboards
+  const newEscrowStates = shipment.lotIds.reduce((acc, id) => ({ ...acc, [id]: 'PARTIAL_RELEASED' as const }), {})
+  saveSimulationState({
+    shipmentId: shipment.id,
+    simStep: 1,
+    simScenario: 'safe',
+    currentTemp: 5.5,
+    currentLocation: `${shipment.origin} (Dispatched)`,
+    progressPct: 15,
+    status: 'en-route',
+    fundsReleasedPct: 70,
+    lotEscrowStates: newEscrowStates,
+  })
 
   if (isSupabaseConfigured()) {
     try {
@@ -717,11 +790,18 @@ export async function createShipmentBooking(shipment: {
         },
       ])
 
-      // Mark lots as shipped in Supabase
-      await supabase
-        .from('lots')
-        .update({ status: 'shipped' })
-        .in('id', shipment.lotIds)
+      // Mark lots as shipped with 70% advance paid in Supabase
+      for (const lotId of shipment.lotIds) {
+        const lot = localLots.find((l) => l.id === lotId)
+        await supabase
+          .from('lots')
+          .update({
+            status: 'shipped',
+            escrow_state: 'PARTIAL_RELEASED',
+            paid_70: lot?.paid70 || 0,
+          })
+          .eq('id', lotId)
+      }
 
       if (!error) return { success: true, isLiveDb: true }
     } catch (e) {
@@ -777,6 +857,10 @@ export function saveSimulationState(state: Partial<SimulationState>) {
     const merged: SimulationState = {
       ...current,
       ...state,
+      lotEscrowStates: {
+        ...(current.lotEscrowStates || {}),
+        ...(state.lotEscrowStates || {}),
+      },
       lastUpdated: Date.now(),
     }
     localStorage.setItem(SIM_KEY, JSON.stringify(merged))
@@ -848,10 +932,13 @@ export async function simulateShipmentDelivery(
       const supabase = createClient()
       await supabase.from('shipments').update({ status: 'arrived' }).eq('id', shipmentId)
       if (lotIds.length > 0) {
-        await supabase
-          .from('lots')
-          .update({ status: 'delivered', escrow_state: 'FULLY_RELEASED' })
-          .in('id', lotIds)
+        for (const lotId of lotIds) {
+          const l = localLots.find((item) => item.id === lotId)
+          await supabase
+            .from('lots')
+            .update({ status: 'delivered', escrow_state: 'FULLY_RELEASED', paid_70: l?.totalValue || 0 })
+            .eq('id', lotId)
+        }
       }
       return { success: true, isLiveDb: true }
     } catch (e) {

@@ -271,6 +271,25 @@ export default function TruckBookingPage() {
             </div>
           </div>
 
+          <div className="mt-3 p-3 bg-emerald-100/90 border border-emerald-300 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🌾</span>
+              <div>
+                <span className="font-bold text-emerald-950">
+                  {lang === 'hi' ? '70% किसान अग्रिम तुरंत बैंक में जारी किया गया!' : '70% Farmer Advance Released Instantly to Bank Accounts!'}
+                </span>
+                <p className="text-[11px] text-emerald-800">
+                  {lang === 'hi' 
+                    ? 'समेकित लॉट के किसानों के बैंक खातों में 70% अग्रिम राशि जारी हो चुकी है। शेष 30% खरीदार जियोफेंस पर स्वतः जारी होगा।'
+                    : '70% advance has been unlocked from escrow to farmers\' bank accounts. Remaining 30% will unlock upon buyer geofence delivery.'}
+                </p>
+              </div>
+            </div>
+            <span className="font-mono font-bold text-xs bg-emerald-700 text-white px-2.5 py-1 rounded-lg self-start sm:self-auto">
+              PARTIAL_RELEASED (70%)
+            </span>
+          </div>
+
           <div className="flex gap-3 mt-4">
             <Link
               href="/operator/logistics"
@@ -501,7 +520,7 @@ export default function TruckBookingPage() {
               <select
                 value={blePodId}
                 onChange={(e) => setBlePodId(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                className="w-full border border-gray-300 bg-white text-gray-900 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:ring-2 focus:ring-blue-400 focus:outline-none"
               >
                 <option value="BLE-POD-8821">BLE-POD-8821 (Dual Temp/Hum Sensor, 15-min Pings, 100% Bat)</option>
                 <option value="BLE-POD-7714">BLE-POD-7714 (Active Arrhenius Kinetic Sync)</option>
@@ -523,8 +542,14 @@ export default function TruckBookingPage() {
                 <span>🏁 30% Geofence Balance (गंतव्य पहुंचने पर):</span>
                 <span className="font-bold text-blue-700">₹{balance30.toLocaleString()}</span>
               </div>
-              <div className="text-[10px] text-gray-400 pt-1 border-t border-orange-200/60">
-                * Governed by FarmSetu logistics rail — Driver receives 70% fuel at dispatch, 30% on GPS arrival.
+              <div className="flex items-center justify-between text-gray-700 font-semibold bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                <span>🌾 70% किसान अग्रिम (Truck Booking Release):</span>
+                <span className="font-bold text-emerald-800">
+                  ₹{currentLots.reduce((sum, l) => sum + Math.round(l.totalValue * 0.7), 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="text-[10px] text-gray-500 pt-1 border-t border-orange-200/60">
+                * Governed by FarmSetu logistics rail — Driver receives 70% fuel at dispatch, 30% on GPS arrival. Selected farmers automatically receive 70% advance upon truck booking confirmation.
               </div>
             </div>
 

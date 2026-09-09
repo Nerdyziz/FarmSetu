@@ -49,7 +49,10 @@ export default function FarmerDashboard() {
 
   const myLots = lots.filter((l) => l.farmerId === DEMO_FARMER_ID || l.farmerName === 'Ramesh Patil')
   const myLotIds = myLots.map((l) => l.id)
-  const myShipment = shipments.find((s) => s.lotIds?.some((id) => myLotIds.includes(id))) || shipments[0]
+  const hasShippedLot = myLots.some((l) => ['shipped', 'delivered', 'diverted'].includes(l.status) || ['PARTIAL_RELEASED', 'FULLY_RELEASED'].includes(l.escrowState))
+  const myShipment = hasShippedLot
+    ? (shipments.find((s) => s.lotIds?.some((id) => myLotIds.includes(id))) || shipments[0])
+    : null
   const mySlot = slot
 
   // Calculate shelf life for active shipment
@@ -73,10 +76,10 @@ export default function FarmerDashboard() {
   )
 
   const escrowStateLabels: Record<string, { en: string; hi: string }> = {
-    PENDING: { en: '⏳ Pending', hi: '⏳ बाकी है' },
-    LOCKED: { en: '🔒 Secured', hi: '🔒 सुरक्षित' },
-    PARTIAL_RELEASED: { en: '✅ 70% Paid', hi: '✅ 70% मिला' },
-    FULLY_RELEASED: { en: '🎉 Fully Paid', hi: '🎉 पूरा मिला' },
+    PENDING: { en: '⏳ Quality Check Pending', hi: '⏳ गुणवत्ता जाँच बाकी' },
+    LOCKED: { en: '🔒 Escrow Locked (70% on Truck Booking)', hi: '🔒 सुरक्षित (ट्रक बुकिंग पर 70% मिलेगा)' },
+    PARTIAL_RELEASED: { en: '✅ 70% Advance Paid', hi: '✅ 70% अग्रिम प्राप्त' },
+    FULLY_RELEASED: { en: '🎉 100% Fully Settled', hi: '🎉 100% पूरा भुगतान' },
   }
 
   const shipmentStatusLabel =
@@ -106,7 +109,9 @@ export default function FarmerDashboard() {
             <div className="text-2xl font-bold text-green-700">₹{totalEarned.toLocaleString('hi-IN')}</div>
           </div>
           <div className="mt-2 pt-2 border-t border-green-50 text-[11px] font-semibold text-green-800">
-            {myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
+            {totalEarned === 0
+              ? (lang === 'hi' ? '🔒 लॉट ग्रेडेड (ट्रक बुकिंग पर 70%)' : '🔒 Graded (70% on Truck Booking)')
+              : myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
               ? (lang === 'hi' ? '🎉 100% पूरा भुगतान प्राप्त' : '🎉 100% Fully Settled')
               : (lang === 'hi' ? '✅ 70% अग्रिम प्राप्त' : '✅ 70% Advance Paid')}
           </div>
@@ -118,7 +123,9 @@ export default function FarmerDashboard() {
             <div className="text-2xl font-bold text-orange-600">₹{pending.toLocaleString('hi-IN')}</div>
           </div>
           <div className="mt-2 pt-2 border-t border-orange-50 text-[11px] font-semibold text-orange-700">
-            {myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
+            {totalEarned === 0
+              ? (lang === 'hi' ? '🔒 100% एस्क्रो में सुरक्षित' : '🔒 100% Secured in Escrow')
+              : myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
               ? (lang === 'hi' ? '✓ शून्य बकाया (सब मिला)' : '✓ Zero Pending (Nil)')
               : (lang === 'hi' ? '🔒 30% एस्क्रो में सुरक्षित' : '🔒 30% in Transit Escrow')}
           </div>
@@ -231,7 +238,7 @@ export default function FarmerDashboard() {
       </div>
 
       {/* Shipment status */}
-      {myShipment && shelfInfo && (
+      {myShipment && shelfInfo ? (
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -338,7 +345,31 @@ export default function FarmerDashboard() {
             </div>
           </div>
         </div>
-      )}
+      ) : myLots.some((l) => l.escrowState === 'LOCKED' || l.status === 'at-pacs') ? (
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-amber-200 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">📦</span>
+              <div>
+                <span className="font-bold text-gray-800 text-base">
+                  {lang === 'hi' ? 'PACS कोल्ड हब में सुरक्षित' : 'Staged at PACS Cold Hub'}
+                </span>
+                <span className="text-xs text-amber-700 font-semibold ml-2">
+                  {lang === 'hi' ? 'ट्रक बुकिंग की प्रतीक्षा' : 'Awaiting Truck Booking'}
+                </span>
+              </div>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+              🔒 100% Escrow Locked
+            </span>
+          </div>
+          <div className="bg-amber-50/70 rounded-xl p-3 border border-amber-100 text-xs text-amber-900 leading-relaxed">
+            {lang === 'hi'
+              ? '✅ आपकी फसल PACS गुणवत्ता केंद्र पर प्रमाणित होकर कोल्ड स्टोरेज में सुरक्षित है। जैसे ही PACS ऑपरेटर आपके लॉट के लिए ट्रक बुक करेगा, 70% अग्रिम राशि तुरंत आपके बैंक खाते में जमा हो जाएगी!'
+              : '✅ Your produce is graded & safely staged in PACS cold storage. As soon as the operator books a consolidation truck for your lot, 70% advance will be instantly credited to your bank account!'}
+          </div>
+        </div>
+      ) : null}
 
       <div className="pb-4" />
     </div>
