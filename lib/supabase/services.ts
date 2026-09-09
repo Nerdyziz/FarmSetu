@@ -1,7 +1,6 @@
 import { createClient, isSupabaseConfigured } from './client'
 import {
   MOCK_LOTS,
-  MOCK_SHIPMENTS,
   HARVEST_SLOTS,
   generatePriceForecast,
 } from '@/lib/mock-data'
@@ -107,6 +106,15 @@ export interface TelemetryRecord {
 }
 
 // ─── Local State Stores (Resilient Offline Demo Fallback) ──────
+// ─── Browser-Scoped Local Persistent Storage Keys ─────────────
+const STORAGE_LOTS_KEY = 'farmsetu_browser_lots_v4'
+const STORAGE_SHIPMENTS_KEY = 'farmsetu_browser_shipments_v4'
+const STORAGE_BIDS_KEY = 'farmsetu_browser_bids_v4'
+const STORAGE_ESCROW_KEY = 'farmsetu_browser_escrow_v4'
+const STORAGE_DIVERSIONS_KEY = 'farmsetu_browser_diversions_v4'
+const STORAGE_SESSION_KEY = 'farmsetu_browser_session_id'
+
+// ─── Local State Stores (Resilient Offline Demo Fallback) ──────
 let localLots: LotRecord[] = [...MOCK_LOTS]
 
 let localStandingBids: StandingBidRecord[] = [
@@ -160,7 +168,7 @@ let localStandingBids: StandingBidRecord[] = [
   },
 ]
 
-let localShipments: ShipmentRecord[] = [
+const INITIAL_SHIPMENTS: ShipmentRecord[] = [
   {
     id: 'SH001',
     lotIds: ['L001'],
@@ -204,6 +212,8 @@ let localShipments: ShipmentRecord[] = [
   },
 ]
 
+let localShipments: ShipmentRecord[] = [...INITIAL_SHIPMENTS]
+
 let localDiversions: DiversionOrderRecord[] = [
   {
     id: 'DIV-001',
@@ -240,92 +250,202 @@ let localEscrow: EscrowTransactionRecord[] = [
   },
 ]
 
-// ─── 2. Table: lots ─────────────────────────────────────────────
-export async function fetchLots(): Promise<{ lots: LotRecord[]; isLiveDb: boolean }> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('lots')
-        .select('*')
-        .order('created_at', { ascending: false })
+// ─── Browser-Scoped Storage Accessors ──────────────────────────
+export function getBrowserSessionId(): string {
+  if (typeof window === 'undefined') return 'server'
+  try {
+    let sess = localStorage.getItem(STORAGE_SESSION_KEY)
+    if (!sess) {
+      sess = 'sess_' + Math.random().toString(36).slice(2, 9) + '_' + Date.now().toString(36)
+      localStorage.setItem(STORAGE_SESSION_KEY, sess)
+    }
+    return sess
+  } catch {
+    return 'fallback_session'
+  }
+}
 
-      if (!error && data) {
-        if (data.length > 0) {
-          const mapped: LotRecord[] = data.map((d: any) => ({
-            id: d.id,
-            farmerId: d.farmer_id || 'f1',
-            farmerName: d.farmer_name || 'Ramesh Patil',
-            farmerNameHi: d.farmer_name_hi || 'रमेश पाटिल',
-            crop: d.crop_type || 'Orange',
-            weightKg: Number(d.weight_kg) || 0,
-            grade: (d.grade as 'A' | 'B' | 'C') || 'B',
-            score: d.score || 70,
-            brixPct: Number(d.brix_pct) || 10,
-            blemishPct: Number(d.blemish_pct) || 5,
-            uniformity: Number(d.weight_uniformity) || 85,
-            certHash: d.cert_hash || 'pending_cert_hash',
-            status: d.status || 'at-pacs',
-            createdAt: d.created_at,
-            pricePerKg: Number(d.price_per_kg) || 35,
-            escrowState: d.escrow_state || 'PENDING',
-            paid70: Number(d.paid_70) || 0,
-            totalValue: Number(d.total_value) || 0,
-          }))
-          let lotsToReturn = mapped
-          const sim = getSimulationState()
-          if (sim && sim.lotEscrowStates) {
-            lotsToReturn = lotsToReturn.map((l) => {
-              if (sim.lotEscrowStates?.[l.id]) {
-                const escrow = sim.lotEscrowStates[l.id]
-                return {
-                  ...l,
-                  escrowState: escrow,
-                  status: escrow === 'FULLY_RELEASED' ? 'delivered' : sim.status === 'diverted' ? 'diverted' : l.status,
-                  paid70: escrow === 'FULLY_RELEASED'
-                    ? l.totalValue
-                    : escrow === 'PARTIAL_RELEASED'
-                      ? Math.round(l.totalValue * 0.7)
-                      : 0,
-                }
-              }
-              return l
-            })
-          }
-          return { lots: lotsToReturn, isLiveDb: true }
-        }
-        // Connected to Supabase, but lots table is empty — return localLots with live DB status
-        let localLotsToReturn = localLots
-        const sim = getSimulationState()
-        if (sim && sim.lotEscrowStates) {
-          localLotsToReturn = localLotsToReturn.map((l) => {
-            if (sim.lotEscrowStates?.[l.id]) {
-              const escrow = sim.lotEscrowStates[l.id]
-              return {
-                ...l,
-                escrowState: escrow,
-                status: escrow === 'FULLY_RELEASED' ? 'delivered' : sim.status === 'diverted' ? 'diverted' : l.status,
-                paid70: escrow === 'FULLY_RELEASED'
-                  ? l.totalValue
-                  : escrow === 'PARTIAL_RELEASED'
-                    ? Math.round(l.totalValue * 0.7)
-                    : 0,
-              }
-            }
-            return l
-          })
-        }
-        return { lots: localLotsToReturn, isLiveDb: true }
+export function getStoredLots(): LotRecord[] {
+  if (typeof window === 'undefined') return localLots
+  try {
+    const raw = localStorage.getItem(STORAGE_LOTS_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        localLots = parsed
+        return parsed
       }
-    } catch (err) {
-      console.warn('Supabase fetchLots failed, using local store:', err)
+    }
+  } catch (e) {
+    console.warn('getStoredLots parse error:', e)
+  }
+  localLots = [...MOCK_LOTS]
+  setStoredLots(localLots)
+  return localLots
+}
+
+export function setStoredLots(lots: LotRecord[]) {
+  localLots = lots
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_LOTS_KEY, JSON.stringify(lots))
+      window.dispatchEvent(new CustomEvent('farmsetu_lots_updated', { detail: lots }))
+    } catch (e) {
+      console.warn('setStoredLots error:', e)
     }
   }
+}
 
-  let localFallback = localLots
+export function getStoredShipments(): ShipmentRecord[] {
+  if (typeof window === 'undefined') return localShipments
+  try {
+    const raw = localStorage.getItem(STORAGE_SHIPMENTS_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        localShipments = parsed
+        return parsed
+      }
+    }
+  } catch (e) {
+    console.warn('getStoredShipments parse error:', e)
+  }
+  localShipments = [...INITIAL_SHIPMENTS]
+  setStoredShipments(localShipments)
+  return localShipments
+}
+
+export function setStoredShipments(shipments: ShipmentRecord[]) {
+  localShipments = shipments
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_SHIPMENTS_KEY, JSON.stringify(shipments))
+      window.dispatchEvent(new CustomEvent('farmsetu_shipments_updated', { detail: shipments }))
+    } catch (e) {
+      console.warn('setStoredShipments error:', e)
+    }
+  }
+}
+
+export function getStoredStandingBids(): StandingBidRecord[] {
+  if (typeof window === 'undefined') return localStandingBids
+  try {
+    const raw = localStorage.getItem(STORAGE_BIDS_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        localStandingBids = parsed
+        return parsed
+      }
+    }
+  } catch (e) {
+    console.warn('getStoredStandingBids parse error:', e)
+  }
+  setStoredStandingBids(localStandingBids)
+  return localStandingBids
+}
+
+export function setStoredStandingBids(bids: StandingBidRecord[]) {
+  localStandingBids = bids
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_BIDS_KEY, JSON.stringify(bids))
+      window.dispatchEvent(new CustomEvent('farmsetu_bids_updated', { detail: bids }))
+    } catch (e) {
+      console.warn('setStoredStandingBids error:', e)
+    }
+  }
+}
+
+export function getStoredEscrow(): EscrowTransactionRecord[] {
+  if (typeof window === 'undefined') return localEscrow
+  try {
+    const raw = localStorage.getItem(STORAGE_ESCROW_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        localEscrow = parsed
+        return parsed
+      }
+    }
+  } catch (e) {
+    console.warn('getStoredEscrow parse error:', e)
+  }
+  setStoredEscrow(localEscrow)
+  return localEscrow
+}
+
+export function setStoredEscrow(escrow: EscrowTransactionRecord[]) {
+  localEscrow = escrow
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_ESCROW_KEY, JSON.stringify(escrow))
+      window.dispatchEvent(new CustomEvent('farmsetu_escrow_updated', { detail: escrow }))
+    } catch (e) {
+      console.warn('setStoredEscrow error:', e)
+    }
+  }
+}
+
+export function getStoredDiversions(): DiversionOrderRecord[] {
+  if (typeof window === 'undefined') return localDiversions
+  try {
+    const raw = localStorage.getItem(STORAGE_DIVERSIONS_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        localDiversions = parsed
+        return parsed
+      }
+    }
+  } catch (e) {
+    console.warn('getStoredDiversions parse error:', e)
+  }
+  setStoredDiversions(localDiversions)
+  return localDiversions
+}
+
+export function setStoredDiversions(orders: DiversionOrderRecord[]) {
+  localDiversions = orders
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_DIVERSIONS_KEY, JSON.stringify(orders))
+      window.dispatchEvent(new CustomEvent('farmsetu_diversions_updated', { detail: orders }))
+    } catch (e) {
+      console.warn('setStoredDiversions error:', e)
+    }
+  }
+}
+
+export function resetBrowserStorage() {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(STORAGE_LOTS_KEY)
+    localStorage.removeItem(STORAGE_SHIPMENTS_KEY)
+    localStorage.removeItem(STORAGE_BIDS_KEY)
+    localStorage.removeItem(STORAGE_ESCROW_KEY)
+    localStorage.removeItem(STORAGE_DIVERSIONS_KEY)
+    localStorage.removeItem(SIM_KEY)
+    localLots = [...MOCK_LOTS]
+    localShipments = [...INITIAL_SHIPMENTS]
+    setStoredLots(localLots)
+    setStoredShipments(localShipments)
+    window.dispatchEvent(new CustomEvent('farmsetu_lots_updated', { detail: localLots }))
+    window.dispatchEvent(new CustomEvent('farmsetu_simulation_update', { detail: null }))
+  } catch (e) {
+    console.warn('resetBrowserStorage error:', e)
+  }
+}
+
+// ─── 2. Table: lots ─────────────────────────────────────────────
+export async function fetchLots(): Promise<{ lots: LotRecord[]; isLiveDb: boolean }> {
+  // 1. Always load the persistent lots for THIS browser from localStorage
+  let lotsToReturn = getStoredLots()
+
+  // 2. Apply active simulation state overlay
   const sim = getSimulationState()
   if (sim && sim.lotEscrowStates) {
-    localFallback = localFallback.map((l) => {
+    lotsToReturn = lotsToReturn.map((l) => {
       if (sim.lotEscrowStates?.[l.id]) {
         const escrow = sim.lotEscrowStates[l.id]
         return {
@@ -342,7 +462,20 @@ export async function fetchLots(): Promise<{ lots: LotRecord[]; isLiveDb: boolea
       return l
     })
   }
-  return { lots: localFallback, isLiveDb: false }
+
+  // 3. Confirm live Supabase connection status
+  let isDb = false
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('lots').select('id').limit(1)
+      if (!error) isDb = true
+    } catch {
+      isDb = false
+    }
+  }
+
+  return { lots: lotsToReturn, isLiveDb: isDb }
 }
 
 export async function submitNewLot(lot: {
@@ -376,7 +509,9 @@ export async function submitNewLot(lot: {
     totalValue: 0,
   }
 
-  localLots = [newLotRecord, ...localLots]
+  // 1. Immediately persist in this browser's local store
+  const currentLots = getStoredLots()
+  setStoredLots([newLotRecord, ...currentLots])
 
   if (isSupabaseConfigured()) {
     try {
@@ -434,7 +569,8 @@ export async function recordLotGrade(
 
   let lotTotalValue = 0
 
-  localLots = localLots.map((l) => {
+  const currentLots = getStoredLots()
+  const updatedLots = currentLots.map((l) => {
     if (l.id === lotId) {
       const finalWeight = actualWeightKg || l.weightKg
       const total = finalWeight * price
@@ -457,6 +593,7 @@ export async function recordLotGrade(
     }
     return l
   })
+  setStoredLots(updatedLots)
 
   // Log transition to LOCKED
   await logEscrowTransition(
@@ -474,7 +611,7 @@ export async function recordLotGrade(
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient()
-      const existing = localLots.find((l) => l.id === lotId)
+      const existing = updatedLots.find((l) => l.id === lotId)
       const finalWeight = actualWeightKg || existing?.weightKg || 0
       const total = finalWeight * price
 
@@ -523,7 +660,8 @@ export async function updateLotStatus(
   lotId: string,
   status: 'pending' | 'at-pacs' | 'shipped' | 'delivered' | 'diverted'
 ): Promise<{ success: boolean }> {
-  localLots = localLots.map((l) => {
+  const currentLots = getStoredLots()
+  const updatedLots = currentLots.map((l) => {
     if (l.id === lotId) {
       const escrowState = status === 'shipped' ? 'PARTIAL_RELEASED' : status === 'delivered' ? 'FULLY_RELEASED' : l.escrowState
       const paid70 = status === 'shipped' ? Math.round(l.totalValue * 0.7) : status === 'delivered' ? l.totalValue : l.paid70
@@ -531,10 +669,12 @@ export async function updateLotStatus(
     }
     return l
   })
+  setStoredLots(updatedLots)
+
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient()
-      const lot = localLots.find((l) => l.id === lotId)
+      const lot = updatedLots.find((l) => l.id === lotId)
       await supabase.from('lots').update({ 
         status,
         ...(lot ? { escrow_state: lot.escrowState, paid_70: lot.paid70 } : {})
@@ -609,16 +749,18 @@ export async function fetchPriceForecasts(
         .order('forecast_date', { ascending: true })
 
       if (!error && data && data.length > 0) {
-        const mapped = data.map((d: any) => ({
-          day: new Date(d.forecast_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' }),
-          p10: Number(d.p10),
-          p50: Number(d.p50),
-          p90: Number(d.p90),
-        }))
-        return { forecasts: mapped, isLiveDb: true }
+        return {
+          forecasts: data.map((d: any) => ({
+            day: d.forecast_date,
+            p10: d.p10_price,
+            p50: d.p50_price,
+            p90: d.p90_price,
+          })),
+          isLiveDb: true,
+        }
       }
     } catch (e) {
-      console.warn('Supabase fetchPriceForecasts failed:', e)
+      console.warn('Supabase price_forecasts failed:', e)
     }
   }
 
@@ -627,67 +769,10 @@ export async function fetchPriceForecasts(
 
 // ─── 6. Table: shipments ───────────────────────────────────────
 export async function fetchShipments(): Promise<{ shipments: ShipmentRecord[]; isLiveDb: boolean }> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('shipments')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!error && data && data.length > 0) {
-        const mapped: ShipmentRecord[] = data.map((d: any) => {
-          const localMatch = localShipments.find((s) => s.id === d.id)
-          return {
-            id: d.id,
-            lotIds: d.lot_ids || [],
-            origin: d.origin,
-            destination: d.destination,
-            truckId: d.truck_id,
-            driverName: d.driver_name,
-            driverPhone: d.driver_phone || '',
-            totalWeightKg: Number(d.total_weight_kg) || 0,
-            totalCrates: d.total_crates || 0,
-            blePodId: d.ble_pod_id || 'BLE-POD-8821',
-            status: d.status || 'en-route',
-            initialShelfLifeHours: d.initial_shelf_life_hours || 240,
-            currentLocation: localMatch?.currentLocation || (d.status === 'arrived' ? `${d.destination} (Delivered)` : d.status === 'diverted' ? 'Diverted to Processing Plant' : `${d.origin} → ${d.destination} (In Transit)`),
-            progressPct: localMatch?.progressPct ?? (d.status === 'arrived' ? 100 : d.status === 'diverted' ? 100 : 50),
-            currentTempC: localMatch?.currentTempC ?? (d.status === 'diverted' ? 16.4 : 5.8),
-            divertedTo: localMatch?.divertedTo,
-            fundsReleasedPct: localMatch?.fundsReleasedPct ?? (d.status === 'arrived' ? 100 : 70),
-            telemetry: localMatch?.telemetry || (d.status === 'diverted' ? generateMockTelemetry(24, 14, 8) : generateMockTelemetry(36, 6.2)),
-            createdAt: d.created_at,
-          }
-        })
-        let shipsToReturn = mapped
-        const sim = getSimulationState()
-        if (sim) {
-          shipsToReturn = shipsToReturn.map((s) => {
-            if (s.id === sim.shipmentId) {
-              return {
-                ...s,
-                status: sim.status,
-                progressPct: sim.progressPct,
-                currentLocation: sim.currentLocation,
-                currentTempC: sim.currentTemp,
-                fundsReleasedPct: sim.fundsReleasedPct,
-              }
-            }
-            return s
-          })
-        }
-        return { shipments: shipsToReturn, isLiveDb: true }
-      }
-    } catch (e) {
-      console.warn('Supabase fetchShipments failed:', e)
-    }
-  }
-
-  let localShipsToReturn = localShipments
+  let shipsToReturn = getStoredShipments()
   const sim = getSimulationState()
   if (sim) {
-    localShipsToReturn = localShipsToReturn.map((s) => {
+    shipsToReturn = shipsToReturn.map((s) => {
       if (s.id === sim.shipmentId) {
         return {
           ...s,
@@ -701,7 +786,19 @@ export async function fetchShipments(): Promise<{ shipments: ShipmentRecord[]; i
       return s
     })
   }
-  return { shipments: localShipsToReturn, isLiveDb: false }
+
+  let isDb = false
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('shipments').select('id').limit(1)
+      if (!error) isDb = true
+    } catch {
+      isDb = false
+    }
+  }
+
+  return { shipments: shipsToReturn, isLiveDb: isDb }
 }
 
 export async function createShipmentBooking(shipment: {
@@ -728,10 +825,13 @@ export async function createShipmentBooking(shipment: {
     createdAt: new Date().toISOString(),
   }
 
-  localShipments = [newShipment, ...localShipments]
+  // 1. Immediately persist in browser shipments
+  const currentShips = getStoredShipments()
+  setStoredShipments([newShipment, ...currentShips])
 
-  // Update lot status to 'shipped', escrowState to 'PARTIAL_RELEASED', and paid70 to 70% of totalValue
-  localLots = localLots.map((l) => {
+  // 2. Update lot status to 'shipped', escrowState to 'PARTIAL_RELEASED', and paid70 to 70% of totalValue
+  const currentLots = getStoredLots()
+  const updatedLots = currentLots.map((l) => {
     if (shipment.lotIds.includes(l.id)) {
       const advance70 = Math.round(l.totalValue * 0.7)
       return {
@@ -743,10 +843,11 @@ export async function createShipmentBooking(shipment: {
     }
     return l
   })
+  setStoredLots(updatedLots)
 
-  // Log escrow transition: Truck Booking Confirmed -> 70% Farmer Advance Released
+  // 3. Log escrow transition: Truck Booking Confirmed -> 70% Farmer Advance Released
   for (const lotId of shipment.lotIds) {
-    const lot = localLots.find((l) => l.id === lotId)
+    const lot = updatedLots.find((l) => l.id === lotId)
     const advance70 = lot?.paid70 || 0
     await logEscrowTransition(
       lotId,
@@ -757,7 +858,7 @@ export async function createShipmentBooking(shipment: {
     )
   }
 
-  // Update simulation state to notify real-time listeners across dashboards
+  // 4. Update simulation state to notify real-time listeners across dashboards
   const newEscrowStates = shipment.lotIds.reduce((acc, id) => ({ ...acc, [id]: 'PARTIAL_RELEASED' as const }), {})
   saveSimulationState({
     shipmentId: shipment.id,
@@ -771,6 +872,7 @@ export async function createShipmentBooking(shipment: {
     lotEscrowStates: newEscrowStates,
   })
 
+  // 5. Update Supabase if configured
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient()
@@ -792,7 +894,7 @@ export async function createShipmentBooking(shipment: {
 
       // Mark lots as shipped with 70% advance paid in Supabase
       for (const lotId of shipment.lotIds) {
-        const lot = localLots.find((l) => l.id === lotId)
+        const lot = updatedLots.find((l) => l.id === lotId)
         await supabase
           .from('lots')
           .update({
@@ -873,11 +975,12 @@ export function saveSimulationState(state: Partial<SimulationState>) {
 export async function simulateShipmentDelivery(
   shipmentId: string
 ): Promise<{ success: boolean; isLiveDb: boolean }> {
-  localShipments = localShipments.map((s) => {
+  const currentShips = getStoredShipments()
+  const updatedShips = currentShips.map((s) => {
     if (s.id === shipmentId) {
       return {
         ...s,
-        status: 'arrived',
+        status: 'arrived' as const,
         progressPct: 100,
         currentLocation: `${s.destination} (Geofence Verified)`,
         fundsReleasedPct: 100,
@@ -885,12 +988,14 @@ export async function simulateShipmentDelivery(
     }
     return s
   })
+  setStoredShipments(updatedShips)
 
-  const targetShipment = localShipments.find((s) => s.id === shipmentId)
+  const targetShipment = updatedShips.find((s) => s.id === shipmentId)
   const lotIds = targetShipment?.lotIds || []
 
   // Release remaining 30% funds to farmer & mark lots delivered
-  localLots = localLots.map((l) => {
+  const currentLots = getStoredLots()
+  const updatedLots = currentLots.map((l) => {
     if (lotIds.includes(l.id)) {
       return {
         ...l,
@@ -901,10 +1006,11 @@ export async function simulateShipmentDelivery(
     }
     return l
   })
+  setStoredLots(updatedLots)
 
   // Log escrow transition
   for (const lotId of lotIds) {
-    const lot = localLots.find((l) => l.id === lotId)
+    const lot = updatedLots.find((l) => l.id === lotId)
     const remainingAmt = lot ? Math.max(0, lot.totalValue - Math.round(lot.totalValue * 0.7)) : 0
     await logEscrowTransition(
       lotId,
@@ -933,7 +1039,7 @@ export async function simulateShipmentDelivery(
       await supabase.from('shipments').update({ status: 'arrived' }).eq('id', shipmentId)
       if (lotIds.length > 0) {
         for (const lotId of lotIds) {
-          const l = localLots.find((item) => item.id === lotId)
+          const l = updatedLots.find((item) => item.id === lotId)
           await supabase
             .from('lots')
             .update({ status: 'delivered', escrow_state: 'FULLY_RELEASED', paid_70: l?.totalValue || 0 })
@@ -955,11 +1061,12 @@ export async function simulateShipmentDiversion(
   bidPricePerKg: number,
   reason: string
 ): Promise<{ success: boolean; isLiveDb: boolean }> {
-  localShipments = localShipments.map((s) => {
+  const currentShips = getStoredShipments()
+  const updatedShips = currentShips.map((s) => {
     if (s.id === shipmentId) {
       return {
         ...s,
-        status: 'diverted',
+        status: 'diverted' as const,
         progressPct: 100,
         currentLocation: `Diverted to ${processorName} (Salvage Route)`,
         divertedTo: processorName,
@@ -970,12 +1077,14 @@ export async function simulateShipmentDiversion(
     }
     return s
   })
+  setStoredShipments(updatedShips)
 
-  const targetShipment = localShipments.find((s) => s.id === shipmentId)
+  const targetShipment = updatedShips.find((s) => s.id === shipmentId)
   const lotIds = targetShipment?.lotIds || []
 
   // Lots marked diverted
-  localLots = localLots.map((l) => {
+  const currentLots = getStoredLots()
+  const updatedLots = currentLots.map((l) => {
     if (lotIds.includes(l.id)) {
       return {
         ...l,
@@ -984,9 +1093,10 @@ export async function simulateShipmentDiversion(
     }
     return l
   })
+  setStoredLots(updatedLots)
 
   for (const lotId of lotIds) {
-    const lot = localLots.find((l) => l.id === lotId)
+    const lot = updatedLots.find((l) => l.id === lotId)
     const salvageVal = (lot?.weightKg || 500) * bidPricePerKg
     await createDiversionOrder({
       shipmentId,
@@ -1046,11 +1156,12 @@ export async function updateShipmentProgress(
     return simulateShipmentDelivery(shipmentId)
   }
 
-  localShipments = localShipments.map((s) => {
+  const currentShips = getStoredShipments()
+  const updatedShips = currentShips.map((s) => {
     if (s.id === shipmentId) {
       return {
         ...s,
-        status: simStep === 0 ? 'loading' : 'en-route',
+        status: simStep === 0 ? ('loading' as const) : ('en-route' as const),
         progressPct,
         currentTempC,
         currentLocation: locationName,
@@ -1059,12 +1170,14 @@ export async function updateShipmentProgress(
     }
     return s
   })
+  setStoredShipments(updatedShips)
 
-  const targetShipment = localShipments.find((s) => s.id === shipmentId)
+  const targetShipment = updatedShips.find((s) => s.id === shipmentId)
   const lotIds = targetShipment?.lotIds || []
 
   // Keep lots at partial released (70% advance)
-  localLots = localLots.map((l) => {
+  const currentLots = getStoredLots()
+  const updatedLots = currentLots.map((l) => {
     if (lotIds.includes(l.id)) {
       return {
         ...l,
@@ -1075,6 +1188,7 @@ export async function updateShipmentProgress(
     }
     return l
   })
+  setStoredLots(updatedLots)
 
   saveSimulationState({
     shipmentId,
@@ -1094,11 +1208,12 @@ export async function updateShipmentProgress(
 export async function resetShipmentSimulation(
   shipmentId: string
 ): Promise<{ success: boolean }> {
-  localShipments = localShipments.map((s) => {
+  const currentShips = getStoredShipments()
+  const updatedShips = currentShips.map((s) => {
     if (s.id === shipmentId) {
       return {
         ...s,
-        status: 'en-route',
+        status: 'en-route' as const,
         progressPct: 28,
         currentTempC: 5.8,
         currentLocation: 'Karanja Lad Interchange (Km 218 / 780)',
@@ -1108,10 +1223,12 @@ export async function resetShipmentSimulation(
     }
     return s
   })
+  setStoredShipments(updatedShips)
 
-  const target = localShipments.find((s) => s.id === shipmentId)
+  const target = updatedShips.find((s) => s.id === shipmentId)
   if (target?.lotIds) {
-    localLots = localLots.map((l) =>
+    const currentLots = getStoredLots()
+    const updatedLots = currentLots.map((l) =>
       target.lotIds.includes(l.id)
         ? {
             ...l,
@@ -1121,6 +1238,7 @@ export async function resetShipmentSimulation(
           }
         : l
     )
+    setStoredLots(updatedLots)
   }
 
   saveSimulationState({
@@ -1168,32 +1286,8 @@ export async function fetchEscrowTransactions(): Promise<{
   transactions: EscrowTransactionRecord[]
   isLiveDb: boolean
 }> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('escrow_transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!error && data && data.length > 0) {
-        const mapped = data.map((d: any) => ({
-          id: d.id,
-          lotId: d.lot_id,
-          fromState: d.from_state,
-          toState: d.to_state,
-          amount: Number(d.amount),
-          triggeredBy: d.triggered_by,
-          createdAt: d.created_at,
-        }))
-        return { transactions: mapped, isLiveDb: true }
-      }
-    } catch (e) {
-      console.warn('Supabase fetchEscrowTransactions failed:', e)
-    }
-  }
-
-  return { transactions: localEscrow, isLiveDb: false }
+  const transactions = getStoredEscrow()
+  return { transactions, isLiveDb: isSupabaseConfigured() }
 }
 
 export async function logEscrowTransition(
@@ -1212,7 +1306,8 @@ export async function logEscrowTransition(
     triggeredBy,
     createdAt: new Date().toISOString(),
   }
-  localEscrow = [record, ...localEscrow]
+  const current = getStoredEscrow()
+  setStoredEscrow([record, ...current])
 
   if (isSupabaseConfigured()) {
     try {
@@ -1238,35 +1333,8 @@ export async function fetchDiversionOrders(): Promise<{
   orders: DiversionOrderRecord[]
   isLiveDb: boolean
 }> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('diversion_orders')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!error && data && data.length > 0) {
-        const mapped: DiversionOrderRecord[] = data.map((d: any) => ({
-          id: d.id,
-          shipmentId: d.shipment_id,
-          lotId: d.lot_id || 'L003',
-          shelfLifePct: Number(d.shelf_life_pct),
-          reason: d.reason,
-          processorName: d.processor_name,
-          processorBidPerKg: Number(d.processor_bid_per_kg),
-          salvageValue: Number(d.salvage_value),
-          status: d.status,
-          createdAt: d.created_at,
-        }))
-        return { orders: mapped, isLiveDb: true }
-      }
-    } catch (e) {
-      console.warn('Supabase fetchDiversionOrders failed:', e)
-    }
-  }
-
-  return { orders: localDiversions, isLiveDb: false }
+  const orders = getStoredDiversions()
+  return { orders, isLiveDb: isSupabaseConfigured() }
 }
 
 export async function createDiversionOrder(order: {
@@ -1284,17 +1352,20 @@ export async function createDiversionOrder(order: {
     status: 'accepted',
     createdAt: new Date().toISOString(),
   }
-  localDiversions = [newOrder, ...localDiversions]
+  const current = getStoredDiversions()
+  setStoredDiversions([newOrder, ...current])
 
-  // Update lot status to diverted
-  localLots = localLots.map((l) =>
+  // Update lot status to diverted in browser store
+  const currentLots = getStoredLots()
+  const updatedLots = currentLots.map((l) =>
     l.id === order.lotId ? { ...l, status: 'diverted' } : l
   )
+  setStoredLots(updatedLots)
 
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient()
-      const { error } = await supabase.from('diversion_orders').insert([
+      await supabase.from('diversion_orders').insert([
         {
           shipment_id: order.shipmentId,
           lot_id: order.lotId,
@@ -1310,7 +1381,7 @@ export async function createDiversionOrder(order: {
       await supabase.from('lots').update({ status: 'diverted' }).eq('id', order.lotId)
       await supabase.from('shipments').update({ status: 'diverted' }).eq('id', order.shipmentId)
 
-      if (!error) return { success: true, isLiveDb: true }
+      return { success: true, isLiveDb: true }
     } catch (e) {
       console.warn('Supabase createDiversionOrder failed:', e)
     }
@@ -1324,35 +1395,8 @@ export async function fetchStandingBids(): Promise<{
   bids: StandingBidRecord[]
   isLiveDb: boolean
 }> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('standing_bids')
-        .select('*')
-        .order('price_per_kg', { ascending: false })
-
-      if (!error && data && data.length > 0) {
-        const mapped: StandingBidRecord[] = data.map((d: any) => ({
-          id: d.id,
-          processorName: d.processor_name,
-          commodity: d.commodity,
-          maxDistanceKm: d.max_distance_km,
-          pricePerKg: Number(d.price_per_kg),
-          capacityTonsPerDay: Number(d.capacity_tons_per_day) || 25,
-          contactPhone: d.contact_phone || '+91 712 200000',
-          plantLocation: d.plant_location || 'Nagpur Industrial Area',
-          isActive: d.is_active !== false,
-          createdAt: d.created_at,
-        }))
-        return { bids: mapped, isLiveDb: true }
-      }
-    } catch (e) {
-      console.warn('Supabase fetchStandingBids failed:', e)
-    }
-  }
-
-  return { bids: localStandingBids, isLiveDb: false }
+  const bids = getStoredStandingBids()
+  return { bids, isLiveDb: isSupabaseConfigured() }
 }
 
 export async function addStandingBid(bid: {
@@ -1371,7 +1415,8 @@ export async function addStandingBid(bid: {
     createdAt: new Date().toISOString(),
   }
 
-  localStandingBids = [newBid, ...localStandingBids]
+  const current = getStoredStandingBids()
+  setStoredStandingBids([newBid, ...current])
 
   if (isSupabaseConfigured()) {
     try {
@@ -1397,3 +1442,4 @@ export async function addStandingBid(bid: {
 
   return { success: true, isLiveDb: false }
 }
+

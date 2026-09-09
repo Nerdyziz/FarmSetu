@@ -125,6 +125,20 @@ export default function TruckBookingPage() {
       setLoadingLots(false)
     }
     loadLots()
+
+    const handleSync = () => {
+      loadLots()
+    }
+    window.addEventListener('farmsetu_lots_updated', handleSync)
+    window.addEventListener('farmsetu_shipments_updated', handleSync)
+    window.addEventListener('farmsetu_simulation_update', handleSync)
+    window.addEventListener('storage', handleSync)
+    return () => {
+      window.removeEventListener('farmsetu_lots_updated', handleSync)
+      window.removeEventListener('farmsetu_shipments_updated', handleSync)
+      window.removeEventListener('farmsetu_simulation_update', handleSync)
+      window.removeEventListener('storage', handleSync)
+    }
   }, [])
 
   const [selectedLots, setSelectedLots] = useState<string[]>([])

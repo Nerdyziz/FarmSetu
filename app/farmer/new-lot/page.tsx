@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { useLang } from '@/lib/i18n/LanguageContext'
 import { submitNewLot } from '@/lib/supabase/services'
 
@@ -17,7 +18,7 @@ export default function NewLotPage() {
   })
   const [photoName, setPhotoName] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
-  const [lotId] = useState(`L${Date.now().toString().slice(-4)}`)
+  const [lotId, setLotId] = useState(`L${Date.now().toString().slice(-4)}`)
 
   const handleSubmit = async () => {
     if (!form.weightKg) return
@@ -81,12 +82,30 @@ export default function NewLotPage() {
               </div>
             ))}
           </div>
-          <button
-            onClick={() => setSubmitted(false)}
-            className="mt-5 w-full py-3 rounded-xl border border-orange-300 text-orange-600 font-semibold text-sm hover:bg-orange-50 transition"
-          >
-            {lang === 'hi' ? '+ और फसल जोड़ें' : '+ Add Another Lot'}
-          </button>
+          <div className="pt-2 space-y-2.5">
+            <Link
+              href="/farmer/dashboard"
+              className="block w-full py-3 rounded-xl bg-orange-500 text-white font-semibold text-sm hover:bg-orange-600 transition shadow-sm text-center"
+            >
+              {lang === 'hi' ? 'किसान डैशबोर्ड पर देखें →' : 'View on Farmer Dashboard →'}
+            </Link>
+            <Link
+              href="/operator/quality"
+              className="block w-full py-3 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 transition shadow-sm text-center"
+            >
+              {lang === 'hi' ? 'PACS गुणवत्ता जाँच में देखें →' : 'View in PACS Quality Queue →'}
+            </Link>
+            <button
+              onClick={() => {
+                setSubmitted(false)
+                setLotId(`L${Date.now().toString().slice(-4)}`)
+                setForm({ cropType: 'Orange', weightKg: '', crates: '', notes: '' })
+              }}
+              className="w-full py-3 rounded-xl border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition"
+            >
+              {lang === 'hi' ? '+ और फसल जोड़ें' : '+ Add Another Lot'}
+            </button>
+          </div>
         </div>
       </div>
     )

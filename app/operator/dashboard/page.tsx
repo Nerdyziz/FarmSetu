@@ -28,9 +28,13 @@ export default function OperatorDashboard() {
     const handleSimulationSync = () => {
       loadData()
     }
+    window.addEventListener('farmsetu_lots_updated', handleSimulationSync)
+    window.addEventListener('farmsetu_shipments_updated', handleSimulationSync)
     window.addEventListener('farmsetu_simulation_update', handleSimulationSync)
     window.addEventListener('storage', handleSimulationSync)
     return () => {
+      window.removeEventListener('farmsetu_lots_updated', handleSimulationSync)
+      window.removeEventListener('farmsetu_shipments_updated', handleSimulationSync)
       window.removeEventListener('farmsetu_simulation_update', handleSimulationSync)
       window.removeEventListener('storage', handleSimulationSync)
     }

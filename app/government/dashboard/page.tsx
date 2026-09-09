@@ -24,6 +24,18 @@ export default function GovernmentDashboard() {
       setLots(lRes.lots)
     }
     loadGovData()
+
+    const handleSync = () => {
+      loadGovData()
+    }
+    window.addEventListener('farmsetu_lots_updated', handleSync)
+    window.addEventListener('farmsetu_simulation_update', handleSync)
+    window.addEventListener('storage', handleSync)
+    return () => {
+      window.removeEventListener('farmsetu_lots_updated', handleSync)
+      window.removeEventListener('farmsetu_simulation_update', handleSync)
+      window.removeEventListener('storage', handleSync)
+    }
   }, [])
 
   const totalVolumeTons = (lots.reduce((acc, l) => acc + l.weightKg, 0) / 1000).toFixed(1)
