@@ -8,7 +8,7 @@ export const translations = {
   appName: { en: 'FarmSetu', hi: 'फार्मसेतु' },
   tagline: { en: 'Trust · Timing · Zero-Loss Transit · Fast Cash', hi: 'भरोसा · सही समय · बिना नुकसान · तुरंत पैसा' },
   selectRole: { en: 'Who are you?', hi: 'आप कौन हैं?' },
-  farmer: { en: 'Farmer / FPO', hi: 'किसान / FPO' },
+  farmerRole: { en: 'Farmer / FPO', hi: 'किसान / FPO' },
   operator: { en: 'PACS Operator', hi: 'PACS संचालक' },
   buyer: { en: 'Buyer', hi: 'खरीदार' },
   government: { en: 'Government (DoCA / PMD)', hi: 'सरकार (DoCA / PMD)' },
@@ -90,7 +90,7 @@ export const translations = {
   avgShelfLife: { en: 'Avg Shelf Life Remaining', hi: 'औसत ताजगी बाकी' },
   diversionAlerts: { en: 'Diversion Alerts', hi: 'मोड़ने की चेतावनी' },
   lotManagement: { en: 'Lot Management', hi: 'लॉट प्रबंधन' },
-  farmer: { en: 'Farmer', hi: 'किसान' },
+  farmerLabel: { en: 'Farmer', hi: 'किसान' },
   temperature: { en: 'Temp (°C)', hi: 'तापमान (°C)' },
   shelfPct: { en: 'Shelf Life %', hi: 'ताजगी %' },
   divert: { en: 'Divert Now', hi: 'अभी मोड़ें' },
@@ -134,6 +134,24 @@ export const translations = {
   enRoute: { en: 'En Route', hi: 'रास्ते में' },
   arrived: { en: 'Arrived', hi: 'पहुँच गया' },
   processorBid: { en: 'Processor Bid Available', hi: 'प्रोसेसर बोली उपलब्ध' },
+
+  // ─── Truck Booking (PACS Operator) ────────────────────────────
+  bookTruck: { en: 'Book Truck', hi: 'ट्रक बुक करें' },
+  truckBookingTitle: { en: 'Truck Booking & Load Consolidation', hi: 'ट्रक बुकिंग और लॉट एकत्रीकरण' },
+  selectLotsToLoad: { en: 'Select Produce Lots to Consolidate', hi: 'ट्रक में लादने के लिए लॉट चुनें' },
+  totalPayload: { en: 'Total Payload Weight', hi: 'कुल लोड वजन' },
+  vehicleType: { en: 'Vehicle Type', hi: 'गाड़ी का प्रकार' },
+  destinationHub: { en: 'Destination / Corridor Hub', hi: 'गंतव्य / कॉरिडोर हब' },
+  assignBlePod: { en: 'Assign BLE IoT Sensor Pod', hi: 'BLE IoT सेंसर पॉड जोड़ें' },
+  fuelAdvance: { en: '70% Fuel Gate Advance', hi: '70% गेट ईंधन अग्रिम' },
+  confirmTruckBooking: { en: 'Confirm Booking & Generate Gate Pass', hi: 'बुकिंग पक्की करें और गेट पास जारी करें' },
+  activeDispatches: { en: 'Active & Scheduled Trucks', hi: 'सक्रिय और निर्धारित ट्रक' },
+
+  // ─── YOLOv8 Vision Scan ───────────────────────────────────────
+  yoloScanTitle: { en: 'YOLOv8 Vision Scanner (Edge AI)', hi: 'YOLOv8 विज़न स्कैनर (एज AI)' },
+  uploadCratePhoto: { en: 'Upload Crate Photo for YOLOv8 AI Scan', hi: 'YOLOv8 AI स्कैन के लिए क्रेट की फोटो डालें' },
+  runYoloScan: { en: 'Run YOLOv8 AI Detection', hi: 'YOLOv8 AI स्कैन चलाएं' },
+  applyAiValues: { en: 'Apply AI Values to Grading Form', hi: 'AI परिणाम फॉर्म में भरें' },
 }
 
 export type TranslationKey = keyof typeof translations

@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FarmSetu 🌾
+**Trust · Timing · Zero-Loss Transit · Fast Cash**  
+*SIH 2026 · Problem Statement ID26033 · Team Vitality*
 
-## Getting Started
+---
 
-First, run the development server:
+## 🚀 Quick Start (Demo Mode — No Supabase needed)
 
 ```bash
+cd farmsetu
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Open http://localhost:3000 — the app runs fully on mock data.
+
+---
+
+## 🔐 Connecting Supabase (Persistent Backend)
+
+### Step 1 — Create a free Supabase account
+1. Go to https://supabase.com
+2. Click **Start your project** → Sign up free
+3. Create a new project (choose any region)
+
+### Step 2 — Get your credentials
+1. In your project → **Settings** → **API**
+2. Copy **Project URL** and **anon public** key
+
+### Step 3 — Set up .env.local
+```bash
+cp .env.local.example .env.local
+# Edit .env.local with your credentials
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Step 4 — Run the database schema
+1. In Supabase Dashboard → **SQL Editor** → **New Query**
+2. Paste the contents of `supabase/migrations/001_farmsetu_schema.sql`
+3. Click **Run**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Step 5 — Restart dev server
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 📱 4 User Portals
 
-To learn more about Next.js, take a look at the following resources:
+| Portal | URL | Description |
+|---|---|---|
+| 🧑‍🌾 Farmer | `/farmer/dashboard` | Simple Hindi-first UI, big icons, no graphs |
+| 🏭 PACS Operator | `/operator/dashboard` | Full analytics, grade charts, Arrhenius gauges |
+| 🛒 Buyer | `/buyer/browse` | Marketplace with grade-filter and escrow orders |
+| 🏛️ Govt PMD | `/government/dashboard` | Dark analytical UI, price forecast, shortage alerts |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🌐 Bilingual Mode
 
-## Deploy on Vercel
+Every page has a **🇮🇳 हिंदी / 🇬🇧 English** toggle button.  
+- Farmer portal defaults to **Hindi**  
+- All other portals default to **English**  
+- Language state is local to each portal
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🧠 Key Algorithms
+
+### Arrhenius Shelf-Life (lib/arrhenius.ts)
+```
+k(T) = A × e^(−Ea / RT)
+Remaining life = initial × (k_ref / k_actual)
+```
+Using orange kinetic parameters (Ea ≈ 80 kJ/mol). BLE telemetry drives live updates.
+
+### Grading Simulation (lib/grading.ts)
+Inputs: Brix %, blemish %, uniformity % → Grade A/B/C + SHA-256 cert  
+*(Production: swap with YOLOv8 ONNX inference call — zero frontend changes needed)*
+
+### Escrow FSM (app/api/escrow/route.ts)
+```
+PENDING → LOCKED → PARTIAL_RELEASED (70%) → FULLY_RELEASED
+```
+
+### TFT Forecast Mock (lib/mock-data.ts)
+Returns P10/P50/P90 price bands per day for 30 days ahead with seasonal patterns.
+
+---
+
+## 🗂️ Project Structure
+
+```
+farmsetu/
+├── app/
+│   ├── page.tsx              ← Landing (role selector)
+│   ├── farmer/               ← Simple Hindi-first portal
+│   ├── operator/             ← Analytics-heavy PACS portal
+│   ├── buyer/                ← Marketplace + escrow
+│   ├── government/           ← DoCA PMD monitoring
+│   └── api/                  ← grade / forecast / arrhenius / escrow
+├── lib/
+│   ├── i18n/                 ← Hindi + English translations
+│   ├── arrhenius.ts          ← Shelf-life math
+│   ├── grading.ts            ← Grade + SHA-256 cert
+│   └── mock-data.ts          ← Demo data
+└── supabase/migrations/      ← PostgreSQL schema
+```
+
+---
+
+## 💡 Unit Economics (from SIH PS)
+```
+₹100 consumer payment:
+  ₹73  → Farmer
+  ₹15  → Logistics
+  ₹4   → PACS / Operator
+  ₹1.5 → Insurance
+  ₹1.5 → Cess
+  ₹5   → FarmSetu
+```
+
+---
+
+*Built for SIH 2026 · Team Vitality · Problem Statement ID26033*
