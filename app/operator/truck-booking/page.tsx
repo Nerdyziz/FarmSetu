@@ -1,29 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useLang } from '@/lib/i18n/LanguageContext'
-import { MOCK_LOTS } from '@/lib/mock-data'
-import { createShipmentBooking } from '@/lib/supabase/services'
+import { fetchLots, createShipmentBooking, updateLotStatus, LotRecord } from '@/lib/supabase/services'
 
-interface AvailableLot {
-  id: string
-  farmerName: string
-  farmerNameHi: string
-  crop: string
-  weightKg: number
-  crates: number
-  grade: 'A' | 'B' | 'C'
-  stagedLocation: string
-}
 
-const STAGED_PACS_LOTS: AvailableLot[] = [
-  { id: 'L001', farmerName: 'Ramesh Patil', farmerNameHi: 'रमेश पाटिल', crop: 'Orange', weightKg: 800, crates: 32, grade: 'A', stagedLocation: 'Pre-Cool Bay 1 (5.5°C)' },
-  { id: 'L002', farmerName: 'Sunita Devi', farmerNameHi: 'सुनीता देवी', crop: 'Orange', weightKg: 450, crates: 18, grade: 'B', stagedLocation: 'Pre-Cool Bay 2 (5.5°C)' },
-  { id: 'L004', farmerName: 'Ramesh Patil', farmerNameHi: 'रमेश पाटिल', crop: 'Orange', weightKg: 380, crates: 15, grade: 'A', stagedLocation: 'Pre-Cool Bay 1 (5.5°C)' },
-  { id: 'L007', farmerName: 'Amol Deshmukh', farmerNameHi: 'अमोल देशमुख', crop: 'Orange', weightKg: 1250, crates: 50, grade: 'A', stagedLocation: 'Pre-Cool Bay 3 (5.5°C)' },
-  { id: 'L008', farmerName: 'Ganesh Raut', farmerNameHi: 'गणेश राउत', crop: 'Orange', weightKg: 920, crates: 37, grade: 'B', stagedLocation: 'Pre-Cool Bay 2 (5.5°C)' },
-  { id: 'L003', farmerName: 'Balu Shinde', farmerNameHi: 'बालू शिंदे', crop: 'Orange', weightKg: 620, crates: 25, grade: 'C', stagedLocation: 'Ambient Bay 4 (Juice)' },
-]
 
 interface FleetTruck {
   id: string
@@ -131,7 +112,22 @@ interface BookingRecord {
 export default function TruckBookingPage() {
   const { lang } = useLang()
 
-  const [selectedLots, setSelectedLots] = useState<string[]>(['L001', 'L002', 'L004'])
+  // ── Live lots ready for dispatch (graded, at PACS) ───────────
+  const [stagedLots, setStagedLots] = useState<LotRecord[]>([])
+  const [loadingLots, setLoadingLots] = useState(true)
+
+  useEffect(() => {
+    async function loadLots() {
+      const res = await fetchLots()
+      // Show lots that are 'at-pacs' (graded, ready to ship) or 'pending' as fallback
+      const ready = res.lots.filter((l) => l.status === 'at-pacs' || l.status === 'shipped')
+      setStagedLots(ready.length > 0 ? ready : res.lots.slice(0, 4))
+      setLoadingLots(false)
+    }
+    loadLots()
+  }, [])
+
+  const [selectedLots, setSelectedLots] = useState<string[]>([])
   const [selectedTruckId, setSelectedTruckId] = useState<string>('TRK-01')
   const [selectedDestId, setSelectedDestId] = useState<string>('DEST-MUMBAI')
   const [blePodId, setBlePodId] = useState<string>('BLE-POD-8821')
@@ -139,23 +135,7 @@ export default function TruckBookingPage() {
   const [activeBooking, setActiveBooking] = useState<BookingRecord | null>(null)
 
   // Past & active dispatches list
-  const [bookings, setBookings] = useState<BookingRecord[]>([
-    {
-      bookingId: 'TB-901',
-      manifestNo: 'MANIFEST-NGP-2026-0908-01',
-      truck: FLEET_TRUCKS[1],
-      destination: CORRIDOR_DESTINATIONS[0],
-      selectedLotIds: ['L001'],
-      totalWeightKg: 800,
-      totalCrates: 32,
-      blePodId: 'BLE-POD-7714',
-      fuelAdvancePaid: 11060,
-      balanceOnGeofence: 4740,
-      totalFreight: 15800,
-      bookedAt: '2026-09-08 07:30 PM',
-      status: 'En Route',
-    },
-  ])
+  const [bookings, setBookings] = useState<BookingRecord[]>([])
 
   const toggleLot = (id: string) => {
     setSelectedLots((prev) =>
@@ -163,10 +143,10 @@ export default function TruckBookingPage() {
     )
   }
 
-  // Calculate totals for selected lots
-  const currentLots = STAGED_PACS_LOTS.filter((l) => selectedLots.includes(l.id))
+  // Calculate totals for selected lots (from live data)
+  const currentLots = stagedLots.filter((l) => selectedLots.includes(l.id))
   const totalWeightKg = currentLots.reduce((sum, l) => sum + l.weightKg, 0)
-  const totalCrates = currentLots.reduce((sum, l) => sum + l.crates, 0)
+  const totalCrates = currentLots.reduce((sum, _l) => sum + Math.round(_l.weightKg / 25), 0)
   const totalTons = (totalWeightKg / 1000).toFixed(2)
 
   const chosenTruck = FLEET_TRUCKS.find((t) => t.id === selectedTruckId) || FLEET_TRUCKS[0]
@@ -197,6 +177,9 @@ export default function TruckBookingPage() {
         bookedAt: 'Just Now',
         status: 'Loading at PACS',
       }
+
+      // Mark all selected lots as 'shipped' in Supabase
+      await Promise.all(selectedLots.map((id) => updateLotStatus(id, 'shipped')))
 
       await createShipmentBooking({
         id: newBooking.manifestNo,
@@ -322,14 +305,25 @@ export default function TruckBookingPage() {
                 </h2>
               </div>
               <span className="text-xs text-blue-700 font-semibold bg-blue-50 px-2.5 py-1 rounded-full">
-                {selectedLots.length} / {STAGED_PACS_LOTS.length} {lang === 'hi' ? 'चयनित' : 'Selected'}
+                {selectedLots.length} / {stagedLots.length} {lang === 'hi' ? 'चयनित' : 'Selected'}
               </span>
             </div>
 
             {/* Lot Checkboxes Table */}
             <div className="space-y-2.5">
-              {STAGED_PACS_LOTS.map((lot) => {
+              {loadingLots ? (
+                <div className="p-4 text-center text-gray-400 animate-pulse text-sm">
+                  {lang === 'hi' ? '⏳ Supabase से लोड हो रहा है…' : '⏳ Loading graded lots from Supabase…'}
+                </div>
+              ) : stagedLots.length === 0 ? (
+                <div className="p-4 text-center text-gray-400 text-sm">
+                  {lang === 'hi' ? 'कोई तैयार लॉट नहीं — पहले जाँच पूरी करें' : 'No graded lots ready — complete quality grading first'}
+                </div>
+              ) : stagedLots.map((lot) => {
                 const isChecked = selectedLots.includes(lot.id)
+                const crates = Math.round(lot.weightKg / 25)
+                const stageLoc = lot.grade === 'C' ? 'Ambient Bay (Juice)' :
+                  lot.grade === 'A' ? 'Pre-Cool Bay 1 (5.5°C)' : 'Pre-Cool Bay 2 (5.5°C)'
                 return (
                   <div
                     key={lot.id}
@@ -357,9 +351,9 @@ export default function TruckBookingPage() {
                         <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
                           <span>🍊 {lot.crop}</span>
                           <span>•</span>
-                          <span>{lot.crates} {lang === 'hi' ? 'क्रेट' : 'crates'}</span>
+                          <span>{crates} {lang === 'hi' ? 'क्रेट' : 'crates'}</span>
                           <span>•</span>
-                          <span className="text-indigo-600 font-medium">{lot.stagedLocation}</span>
+                          <span className="text-indigo-600 font-medium">{stageLoc}</span>
                         </div>
                       </div>
                     </div>

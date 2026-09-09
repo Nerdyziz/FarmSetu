@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useLang } from '@/lib/i18n/LanguageContext'
 import { fetchLots, LotRecord } from '@/lib/supabase/services'
 
@@ -29,13 +30,26 @@ export default function PaymentsPage() {
       setLots(res.lots)
     }
     loadLots()
+
+    const handleSimulationSync = () => {
+      loadLots()
+    }
+    window.addEventListener('farmsetu_simulation_update', handleSimulationSync)
+    window.addEventListener('storage', handleSimulationSync)
+    return () => {
+      window.removeEventListener('farmsetu_simulation_update', handleSimulationSync)
+      window.removeEventListener('storage', handleSimulationSync)
+    }
   }, [])
 
   const myLots = lots.filter((l) => l.farmerId === DEMO_FARMER_ID || l.farmerName === 'Ramesh Patil')
 
-  const totalEarned = myLots.reduce((s, l) => s + (l.paid70 || 0), 0)
+  const totalEarned = myLots.reduce(
+    (s, l) => s + (l.escrowState === 'FULLY_RELEASED' ? l.totalValue : (l.paid70 || 0)),
+    0
+  )
   const totalPending = myLots.reduce(
-    (s, l) => s + (l.escrowState !== 'FULLY_RELEASED' ? l.totalValue - (l.paid70 || 0) : 0),
+    (s, l) => s + (l.escrowState === 'FULLY_RELEASED' ? 0 : Math.max(0, l.totalValue - (l.paid70 || 0))),
     0
   )
 
@@ -47,13 +61,27 @@ export default function PaymentsPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-          <div className="text-xs text-green-700 font-semibold">{lang === 'hi' ? 'मिला पैसा' : 'Received'}</div>
-          <div className="text-2xl font-bold text-green-700 mt-1">₹{totalEarned.toLocaleString('hi-IN')}</div>
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <div className="text-xs text-green-700 font-semibold">{lang === 'hi' ? 'मिला पैसा' : 'Received'}</div>
+            <div className="text-2xl font-bold text-green-700 mt-1">₹{totalEarned.toLocaleString('hi-IN')}</div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-green-100 text-[11px] font-semibold text-green-800">
+            {myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
+              ? (lang === 'hi' ? '🎉 100% पूरा मिला' : '🎉 100% Fully Settled')
+              : (lang === 'hi' ? '✅ 70% अग्रिम प्राप्त' : '✅ 70% Advance Paid')}
+          </div>
         </div>
-        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
-          <div className="text-xs text-orange-700 font-semibold">{lang === 'hi' ? 'बाकी है' : 'Pending'}</div>
-          <div className="text-2xl font-bold text-orange-600 mt-1">₹{totalPending.toLocaleString('hi-IN')}</div>
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <div className="text-xs text-orange-700 font-semibold">{lang === 'hi' ? 'बाकी है' : 'Pending'}</div>
+            <div className="text-2xl font-bold text-orange-600 mt-1">₹{totalPending.toLocaleString('hi-IN')}</div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-orange-100 text-[11px] font-semibold text-orange-700">
+            {myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
+              ? (lang === 'hi' ? '✓ कोई बकाया नहीं' : '✓ Zero Pending (Nil)')
+              : (lang === 'hi' ? '🔒 30% एस्क्रो में सुरक्षित' : '🔒 30% in Transit Escrow')}
+          </div>
         </div>
       </div>
 
@@ -95,10 +123,26 @@ export default function PaymentsPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="font-bold text-gray-800">🍊 {lot.crop} — {lot.id}</div>
-                <div className="text-xs text-gray-500">{lot.weightKg} kg · ₹{lot.totalValue.toLocaleString('hi-IN')}</div>
+                <div className="text-xs text-gray-500">{lot.weightKg} kg · ₹{(lot.totalValue || 0).toLocaleString('hi-IN')}</div>
               </div>
-              <div className={`px-3 py-1 rounded-full text-xs font-bold grade-${lot.grade.toLowerCase()}`}>
-                {lang === 'hi' ? `श्रेणी ${lot.grade}` : `Grade ${lot.grade}`}
+              <div className="flex flex-col items-end gap-1.5">
+                <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  lot.status === 'pending'
+                    ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                    : `grade-${(lot.grade || 'b').toLowerCase()}`
+                }`}>
+                  {lot.status === 'pending'
+                    ? (lang === 'hi' ? '⏳ जाँच बाकी' : '⏳ Awaiting Grade')
+                    : (lang === 'hi' ? `श्रेणी ${lot.grade}` : `Grade ${lot.grade}`)}
+                </div>
+                {lot.certHash && (
+                  <Link
+                    href={`/operator/certificate/${lot.id}`}
+                    className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold rounded-lg transition"
+                  >
+                    🔐 {lang === 'hi' ? 'प्रमाण-पत्र' : 'Certificate'}
+                  </Link>
+                )}
               </div>
             </div>
 

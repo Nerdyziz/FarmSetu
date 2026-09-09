@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar,
   ResponsiveContainer, Tooltip
@@ -7,14 +8,8 @@ import {
 import { useLang } from '@/lib/i18n/LanguageContext'
 import { MOCK_LOTS } from '@/lib/mock-data'
 import { gradeFromInputs, GradeResult } from '@/lib/grading'
-import { recordLotGrade } from '@/lib/supabase/services'
+import { fetchLots, recordLotGrade, LotRecord } from '@/lib/supabase/services'
 
-// Pending lots submitted by farmers (not yet graded)
-const PENDING_LOTS = [
-  { id: 'PL001', farmerName: 'Ramesh Patil',  farmerNameHi: 'रमेश पाटिल',  crop: 'Orange', weightKg: 800, crates: 32, submittedAt: '2026-09-09T06:00:00Z', notes: 'Harvested last night' },
-  { id: 'PL002', farmerName: 'Sunita Devi',   farmerNameHi: 'सुनीता देवी', crop: 'Orange', weightKg: 450, crates: 18, submittedAt: '2026-09-09T07:30:00Z', notes: '' },
-  { id: 'PL003', farmerName: 'Balu Shinde',   farmerNameHi: 'बालू शिंदे',  crop: 'Orange', weightKg: 620, crates: 25, submittedAt: '2026-09-09T08:00:00Z', notes: 'Some early ripening observed' },
-]
 
 interface YoloDetection {
   id: number
@@ -110,10 +105,39 @@ const PRESET_CRATES: Record<'A' | 'B' | 'C', YoloScanData> = {
 export default function OperatorQualityPage() {
   const { lang } = useLang()
 
-  const [selectedLot, setSelectedLot] = useState<typeof PENDING_LOTS[0] | null>(null)
+  // ── Live lots from Supabase ──────────────────────────────────
+  const [allLots, setAllLots] = useState<LotRecord[]>([])
+  const [loadingLots, setLoadingLots] = useState(true)
+
+  useEffect(() => {
+    async function loadLots() {
+      setLoadingLots(true)
+      const res = await fetchLots()
+      setAllLots(res.lots)
+      setLoadingLots(false)
+    }
+    loadLots()
+  }, [])
+
+  // Refresh lots from Supabase (called after grading)
+  const refreshLots = async () => {
+    const res = await fetchLots()
+    setAllLots(res.lots)
+  }
+
+  const [selectedLot, setSelectedLot] = useState<LotRecord | null>(null)
   const [gradedLots, setGradedLots] = useState<Record<string, GradeResult>>({})
   const [form, setForm] = useState({ brixPct: '', blemishPct: '', uniformity: '', actualWeightKg: '' })
   const [grading, setGrading] = useState(false)
+
+  // Lots waiting to be graded = status is 'pending' OR has no grade/certHash yet
+  const ungraded = allLots.filter((l) =>
+    l.status === 'pending' || (!l.certHash && !gradedLots[l.id])
+  )
+  // Completed = graded this session OR already has a certHash in DB
+  const completed = allLots.filter((l) =>
+    gradedLots[l.id] || (l.certHash && l.certHash !== '' && l.status !== 'pending')
+  )
 
   // YOLOv8 scan states
   const [yoloScanning, setYoloScanning] = useState(false)
@@ -191,16 +215,22 @@ export default function OperatorQualityPage() {
     if (!selectedLot || !form.brixPct || !form.blemishPct || !form.uniformity) return
     setGrading(true)
     setTimeout(async () => {
+      const brix = parseFloat(form.brixPct)
+      const blemish = parseFloat(form.blemishPct)
+      const uniformity = parseFloat(form.uniformity)
       const result = gradeFromInputs({
         cropType: selectedLot.crop,
-        brixPct: parseFloat(form.brixPct),
-        blemishPct: parseFloat(form.blemishPct),
-        weightUniformity: parseFloat(form.uniformity),
+        brixPct: brix,
+        blemishPct: blemish,
+        weightUniformity: uniformity,
       })
       await recordLotGrade(
         selectedLot.id,
         result,
-        form.actualWeightKg ? parseFloat(form.actualWeightKg) : undefined
+        form.actualWeightKg ? parseFloat(form.actualWeightKg) : undefined,
+        brix,
+        blemish,
+        uniformity
       )
       setGradedLots((prev) => ({ ...prev, [selectedLot.id]: result }))
       setGrading(false)
@@ -208,11 +238,12 @@ export default function OperatorQualityPage() {
       setYoloActiveData(null)
       setCustomImageUri(null)
       setSelectedLot(null)
+      // Refresh lots from Supabase so farmer/buyer pages see updated data
+      await refreshLots()
     }, 1000)
   }
 
-  const ungraded = PENDING_LOTS.filter((l) => !gradedLots[l.id])
-  const completed = PENDING_LOTS.filter((l) => gradedLots[l.id])
+
 
   // Radar data
   const radarData = [
@@ -260,11 +291,15 @@ export default function OperatorQualityPage() {
             </h2>
           </div>
           <span className="bg-orange-500 text-white text-xs px-2.5 py-1 rounded-full font-bold">
-            {ungraded.length} {lang === 'hi' ? 'बाकी' : 'Pending'}
+            {loadingLots ? '…' : ungraded.length} {lang === 'hi' ? 'बाकी' : 'Pending'}
           </span>
         </div>
 
-        {ungraded.length === 0 ? (
+        {loadingLots ? (
+          <div className="p-6 text-center text-gray-400 animate-pulse">
+            {lang === 'hi' ? '⏳ Supabase से लोड हो रहा है…' : '⏳ Loading from Supabase…'}
+          </div>
+        ) : ungraded.length === 0 ? (
           <div className="p-6 text-center text-gray-400">
             <div className="text-3xl mb-2">✅</div>
             <div className="text-sm">{lang === 'hi' ? 'सभी लॉट जाँचे जा चुके हैं' : 'All dropped-off lots are graded!'}</div>
@@ -279,18 +314,15 @@ export default function OperatorQualityPage() {
                     <span className="ml-2 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-mono font-medium">{lot.id}</span>
                   </div>
                   <div className="text-sm text-gray-500 mt-0.5">
-                    🍊 {lot.crop} · {lot.weightKg} kg · {lot.crates} {lang === 'hi' ? 'क्रेट' : 'crates'}
+                    🍊 {lot.crop} · {lot.weightKg} kg
                   </div>
-                  {lot.notes && (
-                    <div className="text-xs text-blue-600 mt-0.5 italic">
-                      💬 &quot;{lot.notes}&quot;
-                    </div>
-                  )}
+                  <div className="text-xs text-orange-600 mt-0.5 font-semibold">
+                    ⏳ {lang === 'hi' ? 'जाँच बाकी — PACS में पहुँचा' : 'Awaiting inspection — arrived at PACS'}
+                  </div>
                 </div>
                 <button
                   onClick={() => {
                     setSelectedLot(lot)
-                    // auto pre-select a scan preset matching lot weight for quick workflow
                     selectPresetCrate('A')
                   }}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition flex items-center justify-center gap-2"
@@ -303,6 +335,7 @@ export default function OperatorQualityPage() {
           </div>
         )}
       </div>
+
 
       {/* ── GRADING MODAL / PANEL WITH YOLOv8 SCANNER ──────── */}
       {selectedLot && (
@@ -318,7 +351,7 @@ export default function OperatorQualityPage() {
               <div className="text-sm text-gray-600 mt-1">
                 {lang === 'hi' ? 'किसान:' : 'Farmer:'} <strong>{lang === 'hi' ? selectedLot.farmerNameHi : selectedLot.farmerName}</strong>
                 {' '} | {lang === 'hi' ? 'लॉट:' : 'Lot:'} <span className="font-mono text-blue-700 font-bold">{selectedLot.id}</span>
-                {' '} | {selectedLot.weightKg} kg ({selectedLot.crates} {lang === 'hi' ? 'क्रेट' : 'crates'})
+                {' '} | {selectedLot.weightKg} kg · 🍊 {selectedLot.crop}
               </div>
             </div>
             <button
@@ -656,7 +689,9 @@ export default function OperatorQualityPage() {
           </div>
           <div className="divide-y divide-gray-50">
             {completed.map((lot) => {
-              const result = gradedLots[lot.id]!
+              const certHash = gradedLots[lot.id]?.certHash || lot.certHash || ''
+              const grade = (gradedLots[lot.id]?.grade || lot.grade || 'B') as 'A' | 'B' | 'C'
+              const score = gradedLots[lot.id]?.score ?? lot.score ?? 75
               return (
                 <div key={lot.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
@@ -667,15 +702,23 @@ export default function OperatorQualityPage() {
                     <div className="text-sm text-gray-500 mt-0.5">
                       🍊 {lot.crop} · {lot.weightKg} kg
                     </div>
-                    <div className="font-mono text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded mt-1 inline-block border border-emerald-200">
-                      🔐 Cert Hash: {result.certHash.slice(0, 28)}…
-                    </div>
+                    {certHash && (
+                      <div className="font-mono text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded mt-1 inline-block border border-emerald-200">
+                        🔐 {certHash.slice(0, 28)}…
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right flex sm:flex-col items-center sm:items-end justify-between">
-                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${gradeColors[result.grade]}`}>
-                      Grade {result.grade}
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${gradeColors[grade] || 'grade-b'}`}>
+                      Grade {grade}
                     </span>
-                    <div className="text-xs text-gray-500 mt-1">Quality Score: {result.score}/100</div>
+                    <div className="text-xs text-gray-500">Score: {score}/100</div>
+                    <Link
+                      href={`/operator/certificate/${lot.id}`}
+                      className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow transition flex items-center gap-1"
+                    >
+                      🔐 {lang === 'hi' ? 'प्रमाण-पत्र देखें' : 'View Certificate'}
+                    </Link>
                   </div>
                 </div>
               )

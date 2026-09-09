@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LanguageProvider, useLang } from '@/lib/i18n/LanguageContext'
 import { clsx } from 'clsx'
+import SupabaseStatusBadge from '@/components/SupabaseStatusBadge'
 
 const navItems = [
   { path: '/operator/dashboard', label: { en: 'Dashboard', hi: 'डैशबोर्ड' }, icon: '📊' },
@@ -30,6 +31,7 @@ function OperatorLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <SupabaseStatusBadge />
           <button
             onClick={toggleLang}
             className="px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-sm font-semibold transition"

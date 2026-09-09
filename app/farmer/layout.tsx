@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LanguageProvider, useLang } from '@/lib/i18n/LanguageContext'
 import { clsx } from 'clsx'
+import SupabaseStatusBadge from '@/components/SupabaseStatusBadge'
 
 const navItems = [
   { path: '/farmer/dashboard', labelKey: 'farmerDashboard' as const, icon: '🏠' },
@@ -29,6 +30,7 @@ function FarmerNav() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <SupabaseStatusBadge />
           <button
             onClick={toggleLang}
             className="px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-sm font-semibold transition"

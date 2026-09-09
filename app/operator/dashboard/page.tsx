@@ -7,21 +7,33 @@ import {
 } from 'recharts'
 import { useLang } from '@/lib/i18n/LanguageContext'
 import { CORRIDOR_STATS, generateArrivalData } from '@/lib/mock-data'
-import { fetchLots, LotRecord } from '@/lib/supabase/services'
+import { fetchLots, fetchShipments, LotRecord, ShipmentRecord } from '@/lib/supabase/services'
 
 const COLORS = ['#16a34a', '#ca8a04', '#dc2626']
 
 export default function OperatorDashboard() {
   const { t, lang } = useLang()
   const [lots, setLots] = useState<LotRecord[]>([])
+  const [shipments, setShipments] = useState<ShipmentRecord[]>([])
   const arrivalData = generateArrivalData()
 
   useEffect(() => {
     async function loadData() {
-      const res = await fetchLots()
-      setLots(res.lots)
+      const [lotsRes, shipRes] = await Promise.all([fetchLots(), fetchShipments()])
+      setLots(lotsRes.lots)
+      setShipments(shipRes.shipments)
     }
     loadData()
+
+    const handleSimulationSync = () => {
+      loadData()
+    }
+    window.addEventListener('farmsetu_simulation_update', handleSimulationSync)
+    window.addEventListener('storage', handleSimulationSync)
+    return () => {
+      window.removeEventListener('farmsetu_simulation_update', handleSimulationSync)
+      window.removeEventListener('storage', handleSimulationSync)
+    }
   }, [])
 
   const gradeCount = {
@@ -113,6 +125,90 @@ export default function OperatorDashboard() {
         ))}
       </div>
 
+      {/* Live Fleet Transit & Escrow Settlement Monitor */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-blue-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🚛</span>
+            <div>
+              <h2 className="font-bold text-gray-800 text-sm">
+                {lang === 'hi' ? 'लाइव फ्लीट कॉरिडोर ट्रांजिट व फंड रिलीज' : 'Active Fleet Transit & Escrow Release Monitor'}
+              </h2>
+              <p className="text-xs text-gray-500">
+                {lang === 'hi' ? 'नागपुर → मुंबई समृद्धि महामार्ग कॉरिडोर' : 'Nagpur → Mumbai Samruddhi Expressway Corridor'}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/operator/logistics"
+            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold rounded-xl transition flex items-center gap-1 w-fit"
+          >
+            <span>📡</span>
+            <span>{lang === 'hi' ? 'लाइव सिमुलेटर व रूट ट्रैकर खोलें →' : 'Open Route Simulator & Telemetry →'}</span>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {shipments.slice(0, 2).map((s) => {
+            const isDelivered = s.status === 'arrived'
+            const isDiverted = s.status === 'diverted'
+            return (
+              <div key={s.id} className="p-3.5 rounded-xl border border-gray-100 bg-gray-50/60 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-xs text-blue-800">{s.id} · {s.truckId}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      isDelivered ? 'bg-emerald-100 text-emerald-800' : isDiverted ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {s.status}
+                    </span>
+                  </div>
+                  <div className="text-xs font-semibold text-gray-800 mt-1">
+                    📍 {s.currentLocation || `${s.origin} → ${s.destination}`}
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-0.5">
+                    {s.driverName} · {s.totalWeightKg} kg ({s.totalCrates} crates)
+                  </div>
+
+                  {/* Route Progress Bar */}
+                  <div className="mt-2.5">
+                    <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+                      <span>{lang === 'hi' ? 'समृद्धि कॉरिडोर प्रगति' : 'Corridor Progress'}</span>
+                      <span className="font-mono font-bold text-gray-700">{s.progressPct ?? (isDelivered ? 100 : 45)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200/80 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isDelivered
+                            ? 'bg-emerald-500'
+                            : isDiverted
+                            ? 'bg-rose-500'
+                            : 'bg-blue-600'
+                        }`}
+                        style={{ width: `${Math.max(4, s.progressPct ?? (isDelivered ? 100 : 45))}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-gray-200/70 flex items-center justify-between text-xs">
+                  <span className="text-gray-500 font-medium">
+                    {lang === 'hi' ? 'फंड स्थिति:' : 'Escrow Rail:'}
+                  </span>
+                  <span className={`font-bold ${isDelivered ? 'text-emerald-700' : isDiverted ? 'text-amber-700' : 'text-blue-700'}`}>
+                    {isDelivered
+                      ? (lang === 'hi' ? '🎉 100% पूरा फंड रिलीज' : '🎉 100% Fully Settled')
+                      : isDiverted
+                      ? (lang === 'hi' ? '🛡️ 70% अग्रिम गारंटी सुरक्षित' : '🛡️ 70% Protected (Diverted)')
+                      : (lang === 'hi' ? '✅ 70% अग्रिम जारी · 30% बाकी' : '✅ 70% Advance · 30% Geofence')}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Grade distribution pie */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
@@ -197,28 +293,43 @@ export default function OperatorDashboard() {
                   <td className="px-4 py-3 text-gray-600">🍊 {lot.crop}</td>
                   <td className="px-4 py-3 text-gray-600">{lot.weightKg} kg</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold grade-${lot.grade.toLowerCase()}`}>
-                      {lot.grade}
-                    </span>
+                    {lot.status === 'pending' ? (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                        {lang === 'hi' ? 'जाँच बाकी' : 'Pending'}
+                      </span>
+                    ) : (
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold grade-${(lot.grade || 'b').toLowerCase()}`}>
+                        {lot.grade || '—'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="w-16 bg-gray-100 rounded-full h-1.5">
                         <div
-                          className={`h-1.5 rounded-full ${lot.score >= 75 ? 'bg-green-500' : lot.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                          style={{ width: `${lot.score}%` }}
+                          className={`h-1.5 rounded-full ${(lot.score || 0) >= 75 ? 'bg-green-500' : (lot.score || 0) >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${lot.score || 0}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-500">{lot.score}</span>
+                      <span className="text-xs text-gray-500">{lot.score ?? '—'}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                      {lot.escrowState.replace('_', ' ')}
+                      {(lot.escrowState || 'PENDING').replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-400">
-                    {lot.certHash.slice(0, 10)}…
+                  <td className="px-4 py-3">
+                    {lot.certHash ? (
+                      <Link
+                        href={`/operator/certificate/${lot.id}`}
+                        className="px-2 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] font-semibold rounded transition"
+                      >
+                        🔐 {lang === 'hi' ? 'देखें' : 'View'}
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -57,6 +57,12 @@ export interface ShipmentRecord {
   status: 'loading' | 'en-route' | 'arrived' | 'diverted'
   initialShelfLifeHours: number
   createdAt: string
+  currentLocation?: string
+  progressPct?: number
+  currentTempC?: number
+  divertedTo?: string
+  fundsReleasedPct?: number // 70 or 100
+  telemetry?: { timestamp: number; tempC: number }[]
 }
 
 export interface DiversionOrderRecord {
@@ -168,6 +174,11 @@ let localShipments: ShipmentRecord[] = [
     blePodId: 'BLE-POD-8821',
     status: 'en-route',
     initialShelfLifeHours: 240,
+    currentLocation: 'Karanja Lad Interchange (Km 210 / 780)',
+    progressPct: 45,
+    currentTempC: 5.8,
+    fundsReleasedPct: 70,
+    telemetry: generateMockTelemetry(36, 6.2),
     createdAt: '2026-09-08T07:30:00Z',
   },
   {
@@ -183,6 +194,12 @@ let localShipments: ShipmentRecord[] = [
     blePodId: 'BLE-POD-7714',
     status: 'diverted',
     initialShelfLifeHours: 240,
+    currentLocation: 'Diverted to Nagpur Industrial Juice Plant (MIDC Hingna)',
+    progressPct: 100,
+    currentTempC: 16.4,
+    divertedTo: 'Nagpur Industrial Juice Plant',
+    fundsReleasedPct: 70,
+    telemetry: generateMockTelemetry(24, 14, 8),
     createdAt: '2026-09-08T06:00:00Z',
   },
 ]
@@ -233,35 +250,87 @@ export async function fetchLots(): Promise<{ lots: LotRecord[]; isLiveDb: boolea
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (!error && data && data.length > 0) {
-        const mapped: LotRecord[] = data.map((d: any) => ({
-          id: d.id,
-          farmerId: d.farmer_id || 'f1',
-          farmerName: d.farmer_name || 'Ramesh Patil',
-          farmerNameHi: d.farmer_name_hi || 'रमेश पाटिल',
-          crop: d.crop_type || 'Orange',
-          weightKg: Number(d.weight_kg) || 0,
-          grade: (d.grade as 'A' | 'B' | 'C') || 'B',
-          score: d.score || 70,
-          brixPct: Number(d.brix_pct) || 10,
-          blemishPct: Number(d.blemish_pct) || 5,
-          uniformity: Number(d.weight_uniformity) || 85,
-          certHash: d.cert_hash || 'pending_cert_hash',
-          status: d.status || 'at-pacs',
-          createdAt: d.created_at,
-          pricePerKg: Number(d.price_per_kg) || 35,
-          escrowState: d.escrow_state || 'PENDING',
-          paid70: Number(d.paid_70) || 0,
-          totalValue: Number(d.total_value) || 0,
-        }))
-        return { lots: mapped, isLiveDb: true }
+      if (!error && data) {
+        if (data.length > 0) {
+          const mapped: LotRecord[] = data.map((d: any) => ({
+            id: d.id,
+            farmerId: d.farmer_id || 'f1',
+            farmerName: d.farmer_name || 'Ramesh Patil',
+            farmerNameHi: d.farmer_name_hi || 'रमेश पाटिल',
+            crop: d.crop_type || 'Orange',
+            weightKg: Number(d.weight_kg) || 0,
+            grade: (d.grade as 'A' | 'B' | 'C') || 'B',
+            score: d.score || 70,
+            brixPct: Number(d.brix_pct) || 10,
+            blemishPct: Number(d.blemish_pct) || 5,
+            uniformity: Number(d.weight_uniformity) || 85,
+            certHash: d.cert_hash || 'pending_cert_hash',
+            status: d.status || 'at-pacs',
+            createdAt: d.created_at,
+            pricePerKg: Number(d.price_per_kg) || 35,
+            escrowState: d.escrow_state || 'PENDING',
+            paid70: Number(d.paid_70) || 0,
+            totalValue: Number(d.total_value) || 0,
+          }))
+          let lotsToReturn = mapped
+          const sim = getSimulationState()
+          if (sim && sim.lotEscrowStates) {
+            lotsToReturn = lotsToReturn.map((l) => {
+              if (sim.lotEscrowStates?.[l.id]) {
+                const escrow = sim.lotEscrowStates[l.id]
+                return {
+                  ...l,
+                  escrowState: escrow,
+                  status: escrow === 'FULLY_RELEASED' ? 'delivered' : sim.status === 'diverted' ? 'diverted' : l.status,
+                  paid70: escrow === 'FULLY_RELEASED' ? l.totalValue : (l.paid70 || Math.round(l.totalValue * 0.7)),
+                }
+              }
+              return l
+            })
+          }
+          return { lots: lotsToReturn, isLiveDb: true }
+        }
+        // Connected to Supabase, but lots table is empty — return localLots with live DB status
+        let localLotsToReturn = localLots
+        const sim = getSimulationState()
+        if (sim && sim.lotEscrowStates) {
+          localLotsToReturn = localLotsToReturn.map((l) => {
+            if (sim.lotEscrowStates?.[l.id]) {
+              const escrow = sim.lotEscrowStates[l.id]
+              return {
+                ...l,
+                escrowState: escrow,
+                status: escrow === 'FULLY_RELEASED' ? 'delivered' : sim.status === 'diverted' ? 'diverted' : l.status,
+                paid70: escrow === 'FULLY_RELEASED' ? l.totalValue : (l.paid70 || Math.round(l.totalValue * 0.7)),
+              }
+            }
+            return l
+          })
+        }
+        return { lots: localLotsToReturn, isLiveDb: true }
       }
     } catch (err) {
       console.warn('Supabase fetchLots failed, using local store:', err)
     }
   }
 
-  return { lots: localLots, isLiveDb: false }
+  let localFallback = localLots
+  const sim = getSimulationState()
+  if (sim && sim.lotEscrowStates) {
+    localFallback = localFallback.map((l) => {
+      if (sim.lotEscrowStates?.[l.id]) {
+        const escrow = sim.lotEscrowStates[l.id]
+        return {
+          ...l,
+          escrowState: escrow,
+          status: escrow === 'FULLY_RELEASED' ? 'delivered' : sim.status === 'diverted' ? 'diverted' : l.status,
+          paid70: escrow === 'FULLY_RELEASED' ? l.totalValue : (l.paid70 || Math.round(l.totalValue * 0.7)),
+        }
+      }
+      return l
+    })
+  }
+  return { lots: localFallback, isLiveDb: false }
 }
 
 export async function submitNewLot(lot: {
@@ -286,13 +355,13 @@ export async function submitNewLot(lot: {
     brixPct: 0,
     blemishPct: 0,
     uniformity: 0,
-    certHash: 'Awaiting_PACS_YOLOv8_Scan',
-    status: 'at-pacs',
+    certHash: '',
+    status: 'pending',
     createdAt: new Date().toISOString(),
-    pricePerKg: 35,
+    pricePerKg: 0,
     escrowState: 'PENDING',
     paid70: 0,
-    totalValue: lot.weightKg * 35,
+    totalValue: 0,
   }
 
   localLots = [newLotRecord, ...localLots]
@@ -300,21 +369,38 @@ export async function submitNewLot(lot: {
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient()
-      const { error } = await supabase.from('lots').insert([
+      let { error } = await supabase.from('lots').insert([
         {
           id: lot.id,
           farmer_name: lot.farmerName,
           farmer_name_hi: lot.farmerNameHi,
           crop_type: lot.crop,
           weight_kg: lot.weightKg,
-          status: 'at-pacs',
+          status: 'pending',
           escrow_state: 'PENDING',
-          price_per_kg: 35,
-          total_value: lot.weightKg * 35,
+          price_per_kg: 0,
+          total_value: 0,
         },
       ])
 
+      // Fallback if farmer_name column not in schema cache
+      if (error && error.message?.includes('farmer_name')) {
+        const fallback = await supabase.from('lots').insert([
+          {
+            id: lot.id,
+            crop_type: lot.crop,
+            weight_kg: lot.weightKg,
+            status: 'pending',
+            escrow_state: 'PENDING',
+            price_per_kg: 0,
+            total_value: 0,
+          },
+        ])
+        error = fallback.error
+      }
+
       if (!error) return { success: true, isLiveDb: true }
+      console.warn('Supabase submitNewLot insert warning:', error)
     } catch (e) {
       console.warn('Supabase submitNewLot insert failed:', e)
     }
@@ -323,13 +409,16 @@ export async function submitNewLot(lot: {
   return { success: true, isLiveDb: false }
 }
 
-// ─── 3. Table: grade_certificates ──────────────────────────────
 export async function recordLotGrade(
   lotId: string,
   gradeResult: GradeResult,
-  actualWeightKg?: number
+  actualWeightKg?: number,
+  brixPct?: number,
+  blemishPct?: number,
+  uniformity?: number
 ): Promise<{ success: boolean; isLiveDb: boolean }> {
   const price = gradeResult.grade === 'A' ? 40 : gradeResult.grade === 'B' ? 30 : 15
+  const newStatus = gradeResult.grade === 'C' ? 'diverted' : 'at-pacs'
 
   localLots = localLots.map((l) => {
     if (l.id === lotId) {
@@ -340,11 +429,11 @@ export async function recordLotGrade(
         weightKg: finalWeight,
         grade: gradeResult.grade,
         score: gradeResult.score,
-        brixPct: 11.5,
-        blemishPct: 4.2,
-        uniformity: 90,
+        brixPct: brixPct ?? l.brixPct,
+        blemishPct: blemishPct ?? l.blemishPct,
+        uniformity: uniformity ?? l.uniformity,
         certHash: gradeResult.certHash,
-        status: gradeResult.grade === 'C' ? 'diverted' : 'at-pacs',
+        status: newStatus,
         pricePerKg: price,
         totalValue: total,
         paid70: Math.round(total * 0.7),
@@ -357,7 +446,11 @@ export async function recordLotGrade(
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient()
-      await supabase
+      const existing = localLots.find((l) => l.id === lotId)
+      const finalWeight = actualWeightKg || existing?.weightKg || 0
+      const total = finalWeight * price
+
+      const { error: updateError } = await supabase
         .from('lots')
         .update({
           grade: gradeResult.grade,
@@ -365,9 +458,19 @@ export async function recordLotGrade(
           cert_hash: gradeResult.certHash,
           escrow_state: 'LOCKED',
           price_per_kg: price,
-          status: gradeResult.grade === 'C' ? 'diverted' : 'at-pacs',
+          total_value: total,
+          paid_70: Math.round(total * 0.7),
+          weight_kg: finalWeight,
+          brix_pct: brixPct ?? null,
+          blemish_pct: blemishPct ?? null,
+          weight_uniformity: uniformity ?? null,
+          status: newStatus,
         })
         .eq('id', lotId)
+
+      if (updateError) {
+        console.warn('Supabase lot update warning:', updateError.message)
+      }
 
       await supabase.from('grade_certificates').insert([
         {
@@ -378,13 +481,33 @@ export async function recordLotGrade(
         },
       ])
 
-      return { success: true, isLiveDb: true }
+      return { success: true, isLiveDb: !updateError }
     } catch (e) {
       console.warn('Supabase recordLotGrade failed:', e)
     }
   }
 
   return { success: true, isLiveDb: false }
+}
+
+// ─── 3b. updateLotStatus — for shipping, delivery, diversion ───
+export async function updateLotStatus(
+  lotId: string,
+  status: 'pending' | 'at-pacs' | 'shipped' | 'delivered' | 'diverted'
+): Promise<{ success: boolean }> {
+  localLots = localLots.map((l) =>
+    l.id === lotId ? { ...l, status } : l
+  )
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      await supabase.from('lots').update({ status }).eq('id', lotId)
+      return { success: true }
+    } catch (e) {
+      console.warn('updateLotStatus failed:', e)
+    }
+  }
+  return { success: true }
 }
 
 // ─── 4. Table: harvest_slots ───────────────────────────────────
@@ -476,29 +599,72 @@ export async function fetchShipments(): Promise<{ shipments: ShipmentRecord[]; i
         .order('created_at', { ascending: false })
 
       if (!error && data && data.length > 0) {
-        const mapped: ShipmentRecord[] = data.map((d: any) => ({
-          id: d.id,
-          lotIds: d.lot_ids || [],
-          origin: d.origin,
-          destination: d.destination,
-          truckId: d.truck_id,
-          driverName: d.driver_name,
-          driverPhone: d.driver_phone || '',
-          totalWeightKg: Number(d.total_weight_kg) || 0,
-          totalCrates: d.total_crates || 0,
-          blePodId: d.ble_pod_id || 'BLE-POD-8821',
-          status: d.status || 'en-route',
-          initialShelfLifeHours: d.initial_shelf_life_hours || 240,
-          createdAt: d.created_at,
-        }))
-        return { shipments: mapped, isLiveDb: true }
+        const mapped: ShipmentRecord[] = data.map((d: any) => {
+          const localMatch = localShipments.find((s) => s.id === d.id)
+          return {
+            id: d.id,
+            lotIds: d.lot_ids || [],
+            origin: d.origin,
+            destination: d.destination,
+            truckId: d.truck_id,
+            driverName: d.driver_name,
+            driverPhone: d.driver_phone || '',
+            totalWeightKg: Number(d.total_weight_kg) || 0,
+            totalCrates: d.total_crates || 0,
+            blePodId: d.ble_pod_id || 'BLE-POD-8821',
+            status: d.status || 'en-route',
+            initialShelfLifeHours: d.initial_shelf_life_hours || 240,
+            currentLocation: localMatch?.currentLocation || (d.status === 'arrived' ? `${d.destination} (Delivered)` : d.status === 'diverted' ? 'Diverted to Processing Plant' : `${d.origin} → ${d.destination} (In Transit)`),
+            progressPct: localMatch?.progressPct ?? (d.status === 'arrived' ? 100 : d.status === 'diverted' ? 100 : 50),
+            currentTempC: localMatch?.currentTempC ?? (d.status === 'diverted' ? 16.4 : 5.8),
+            divertedTo: localMatch?.divertedTo,
+            fundsReleasedPct: localMatch?.fundsReleasedPct ?? (d.status === 'arrived' ? 100 : 70),
+            telemetry: localMatch?.telemetry || (d.status === 'diverted' ? generateMockTelemetry(24, 14, 8) : generateMockTelemetry(36, 6.2)),
+            createdAt: d.created_at,
+          }
+        })
+        let shipsToReturn = mapped
+        const sim = getSimulationState()
+        if (sim) {
+          shipsToReturn = shipsToReturn.map((s) => {
+            if (s.id === sim.shipmentId) {
+              return {
+                ...s,
+                status: sim.status,
+                progressPct: sim.progressPct,
+                currentLocation: sim.currentLocation,
+                currentTempC: sim.currentTemp,
+                fundsReleasedPct: sim.fundsReleasedPct,
+              }
+            }
+            return s
+          })
+        }
+        return { shipments: shipsToReturn, isLiveDb: true }
       }
     } catch (e) {
       console.warn('Supabase fetchShipments failed:', e)
     }
   }
 
-  return { shipments: localShipments, isLiveDb: false }
+  let localShipsToReturn = localShipments
+  const sim = getSimulationState()
+  if (sim) {
+    localShipsToReturn = localShipsToReturn.map((s) => {
+      if (s.id === sim.shipmentId) {
+        return {
+          ...s,
+          status: sim.status,
+          progressPct: sim.progressPct,
+          currentLocation: sim.currentLocation,
+          currentTempC: sim.currentTemp,
+          fundsReleasedPct: sim.fundsReleasedPct,
+        }
+      }
+      return s
+    })
+  }
+  return { shipments: localShipsToReturn, isLiveDb: false }
 }
 
 export async function createShipmentBooking(shipment: {
@@ -517,6 +683,11 @@ export async function createShipmentBooking(shipment: {
     ...shipment,
     status: 'en-route',
     initialShelfLifeHours: 240,
+    currentLocation: `${shipment.origin} (Dispatched)`,
+    progressPct: 15,
+    currentTempC: 5.5,
+    fundsReleasedPct: 70,
+    telemetry: generateMockTelemetry(36, 5.5),
     createdAt: new Date().toISOString(),
   }
 
@@ -559,6 +730,325 @@ export async function createShipmentBooking(shipment: {
   }
 
   return { success: true, isLiveDb: false }
+}
+
+// ─── 6b. Interactive Simulation Functions for Logistics ───────
+export interface SimulationState {
+  shipmentId: string
+  simStep: number
+  simScenario: 'safe' | 'excursion'
+  currentTemp: number
+  currentLocation: string
+  progressPct: number
+  status: 'loading' | 'en-route' | 'arrived' | 'diverted'
+  fundsReleasedPct: number
+  lotEscrowStates?: Record<string, 'PENDING' | 'LOCKED' | 'PARTIAL_RELEASED' | 'FULLY_RELEASED'>
+  lastUpdated: number
+}
+
+const SIM_KEY = 'farmsetu_simulation_state_v2'
+
+export function getSimulationState(): SimulationState | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(SIM_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch (e) {
+    console.warn('getSimulationState parse error:', e)
+  }
+  return null
+}
+
+export function saveSimulationState(state: Partial<SimulationState>) {
+  if (typeof window === 'undefined') return
+  try {
+    const current = getSimulationState() || {
+      shipmentId: 'SH001',
+      simStep: 1,
+      simScenario: 'safe',
+      currentTemp: 5.8,
+      currentLocation: 'Karanja Lad Interchange (Km 218 / 780)',
+      progressPct: 28,
+      status: 'en-route',
+      fundsReleasedPct: 70,
+      lotEscrowStates: { L001: 'PARTIAL_RELEASED' },
+      lastUpdated: Date.now(),
+    }
+    const merged: SimulationState = {
+      ...current,
+      ...state,
+      lastUpdated: Date.now(),
+    }
+    localStorage.setItem(SIM_KEY, JSON.stringify(merged))
+    window.dispatchEvent(new CustomEvent('farmsetu_simulation_update', { detail: merged }))
+  } catch (e) {
+    console.warn('saveSimulationState error:', e)
+  }
+}
+
+export async function simulateShipmentDelivery(
+  shipmentId: string
+): Promise<{ success: boolean; isLiveDb: boolean }> {
+  localShipments = localShipments.map((s) => {
+    if (s.id === shipmentId) {
+      return {
+        ...s,
+        status: 'arrived',
+        progressPct: 100,
+        currentLocation: `${s.destination} (Geofence Verified)`,
+        fundsReleasedPct: 100,
+      }
+    }
+    return s
+  })
+
+  const targetShipment = localShipments.find((s) => s.id === shipmentId)
+  const lotIds = targetShipment?.lotIds || []
+
+  // Release remaining 30% funds to farmer & mark lots delivered
+  localLots = localLots.map((l) => {
+    if (lotIds.includes(l.id)) {
+      return {
+        ...l,
+        status: 'delivered',
+        escrowState: 'FULLY_RELEASED',
+        paid70: l.totalValue,
+      }
+    }
+    return l
+  })
+
+  // Log escrow transition
+  for (const lotId of lotIds) {
+    const lot = localLots.find((l) => l.id === lotId)
+    const remainingAmt = lot ? Math.max(0, lot.totalValue - Math.round(lot.totalValue * 0.7)) : 0
+    await logEscrowTransition(
+      lotId,
+      'PARTIAL_RELEASED',
+      'FULLY_RELEASED',
+      remainingAmt,
+      'Buyer Geofence Delivery Confirmation — 30% Final Settlement Released'
+    )
+  }
+
+  saveSimulationState({
+    shipmentId,
+    simStep: 4,
+    simScenario: 'safe',
+    currentTemp: 6.6,
+    currentLocation: `${targetShipment?.destination || 'Mumbai Vashi APMC'} (Geofence Verified)`,
+    progressPct: 100,
+    status: 'arrived',
+    fundsReleasedPct: 100,
+    lotEscrowStates: lotIds.reduce((acc, id) => ({ ...acc, [id]: 'FULLY_RELEASED' }), {}),
+  })
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      await supabase.from('shipments').update({ status: 'arrived' }).eq('id', shipmentId)
+      if (lotIds.length > 0) {
+        await supabase
+          .from('lots')
+          .update({ status: 'delivered', escrow_state: 'FULLY_RELEASED' })
+          .in('id', lotIds)
+      }
+      return { success: true, isLiveDb: true }
+    } catch (e) {
+      console.warn('simulateShipmentDelivery failed:', e)
+    }
+  }
+
+  return { success: true, isLiveDb: false }
+}
+
+export async function simulateShipmentDiversion(
+  shipmentId: string,
+  processorName: string,
+  bidPricePerKg: number,
+  reason: string
+): Promise<{ success: boolean; isLiveDb: boolean }> {
+  localShipments = localShipments.map((s) => {
+    if (s.id === shipmentId) {
+      return {
+        ...s,
+        status: 'diverted',
+        progressPct: 100,
+        currentLocation: `Diverted to ${processorName} (Salvage Route)`,
+        divertedTo: processorName,
+        currentTempC: 16.4,
+        fundsReleasedPct: 70, // 70% advance guaranteed by PACS
+        telemetry: generateMockTelemetry(24, 14, 8),
+      }
+    }
+    return s
+  })
+
+  const targetShipment = localShipments.find((s) => s.id === shipmentId)
+  const lotIds = targetShipment?.lotIds || []
+
+  // Lots marked diverted
+  localLots = localLots.map((l) => {
+    if (lotIds.includes(l.id)) {
+      return {
+        ...l,
+        status: 'diverted',
+      }
+    }
+    return l
+  })
+
+  for (const lotId of lotIds) {
+    const lot = localLots.find((l) => l.id === lotId)
+    const salvageVal = (lot?.weightKg || 500) * bidPricePerKg
+    await createDiversionOrder({
+      shipmentId,
+      lotId,
+      shelfLifePct: 16,
+      reason,
+      processorName,
+      processorBidPerKg: bidPricePerKg,
+      salvageValue: salvageVal,
+    })
+    await logEscrowTransition(
+      lotId,
+      'PARTIAL_RELEASED',
+      'PARTIAL_RELEASED',
+      salvageVal,
+      `Processor Diversion to ${processorName} — 70% Farmer Advance Protected by PACS Guarantee`
+    )
+  }
+
+  saveSimulationState({
+    shipmentId,
+    simStep: 2,
+    simScenario: 'excursion',
+    currentTemp: 16.4,
+    currentLocation: `Diverted to ${processorName} (Salvage Route)`,
+    progressPct: 100,
+    status: 'diverted',
+    fundsReleasedPct: 70,
+    lotEscrowStates: lotIds.reduce((acc, id) => ({ ...acc, [id]: 'PARTIAL_RELEASED' }), {}),
+  })
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient()
+      await supabase.from('shipments').update({ status: 'diverted' }).eq('id', shipmentId)
+      if (lotIds.length > 0) {
+        await supabase.from('lots').update({ status: 'diverted' }).in('id', lotIds)
+      }
+      return { success: true, isLiveDb: true }
+    } catch (e) {
+      console.warn('simulateShipmentDiversion failed:', e)
+    }
+  }
+
+  return { success: true, isLiveDb: false }
+}
+
+export async function updateShipmentProgress(
+  shipmentId: string,
+  progressPct: number,
+  currentTempC: number,
+  locationName: string,
+  simStep: number = 1,
+  scenario: 'safe' | 'excursion' = 'safe'
+): Promise<{ success: boolean; isLiveDb?: boolean }> {
+  if (simStep === 4) {
+    return simulateShipmentDelivery(shipmentId)
+  }
+
+  localShipments = localShipments.map((s) => {
+    if (s.id === shipmentId) {
+      return {
+        ...s,
+        status: simStep === 0 ? 'loading' : 'en-route',
+        progressPct,
+        currentTempC,
+        currentLocation: locationName,
+        fundsReleasedPct: 70,
+      }
+    }
+    return s
+  })
+
+  const targetShipment = localShipments.find((s) => s.id === shipmentId)
+  const lotIds = targetShipment?.lotIds || []
+
+  // Keep lots at partial released (70% advance)
+  localLots = localLots.map((l) => {
+    if (lotIds.includes(l.id)) {
+      return {
+        ...l,
+        status: 'shipped',
+        escrowState: 'PARTIAL_RELEASED',
+        paid70: Math.round(l.totalValue * 0.7),
+      }
+    }
+    return l
+  })
+
+  saveSimulationState({
+    shipmentId,
+    simStep,
+    simScenario: scenario,
+    currentTemp: currentTempC,
+    currentLocation: locationName,
+    progressPct,
+    status: simStep === 0 ? 'loading' : 'en-route',
+    fundsReleasedPct: 70,
+    lotEscrowStates: lotIds.reduce((acc, id) => ({ ...acc, [id]: 'PARTIAL_RELEASED' }), {}),
+  })
+
+  return { success: true }
+}
+
+export async function resetShipmentSimulation(
+  shipmentId: string
+): Promise<{ success: boolean }> {
+  localShipments = localShipments.map((s) => {
+    if (s.id === shipmentId) {
+      return {
+        ...s,
+        status: 'en-route',
+        progressPct: 28,
+        currentTempC: 5.8,
+        currentLocation: 'Karanja Lad Interchange (Km 218 / 780)',
+        fundsReleasedPct: 70,
+        telemetry: generateMockTelemetry(36, 6.2),
+      }
+    }
+    return s
+  })
+
+  const target = localShipments.find((s) => s.id === shipmentId)
+  if (target?.lotIds) {
+    localLots = localLots.map((l) =>
+      target.lotIds.includes(l.id)
+        ? {
+            ...l,
+            status: 'shipped',
+            escrowState: 'PARTIAL_RELEASED',
+            paid70: Math.round(l.totalValue * 0.7),
+          }
+        : l
+    )
+  }
+
+  saveSimulationState({
+    shipmentId,
+    simStep: 1,
+    simScenario: 'safe',
+    currentTemp: 5.8,
+    currentLocation: 'Karanja Lad Interchange (Km 218 / 780)',
+    progressPct: 28,
+    status: 'en-route',
+    fundsReleasedPct: 70,
+    lotEscrowStates: target?.lotIds?.reduce((acc, id) => ({ ...acc, [id]: 'PARTIAL_RELEASED' }), {}),
+  })
+
+  return { success: true }
 }
 
 // ─── 7. Table: telemetry_readings ──────────────────────────────

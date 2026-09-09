@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useLang } from '@/lib/i18n/LanguageContext'
 import { fetchLots, logEscrowTransition, LotRecord } from '@/lib/supabase/services'
 
@@ -19,9 +20,10 @@ export default function BrowsePage() {
     loadLots()
   }, [])
 
+  const verifiedLots = lots.filter((l) => l.status !== 'pending')
   const filtered = gradeFilter === 'All'
-    ? lots
-    : lots.filter((l) => l.grade === gradeFilter)
+    ? verifiedLots
+    : verifiedLots.filter((l) => l.grade === gradeFilter)
 
   const handleOrder = async (lotId: string) => {
     setOrderedLots((prev) => [...prev, lotId])
@@ -76,16 +78,16 @@ export default function BrowsePage() {
         {filtered.map((lot) => {
           const isOrdered = orderedLots.includes(lot.id)
           return (
-            <div key={lot.id} className={`border-2 rounded-2xl p-5 bg-white shadow-sm ${gradeColors[lot.grade]}`}>
+            <div key={lot.id} className={`border-2 rounded-2xl p-5 bg-white shadow-sm ${gradeColors[lot.grade] || gradeColors.B}`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="font-bold text-gray-800 text-lg">🍊 {lot.crop}</div>
                   <div className="text-xs text-gray-400 mt-0.5">
                     {lang === 'hi' ? 'किसान:' : 'Farmer:'} {lang === 'hi' ? lot.farmerNameHi : lot.farmerName}
-                    {' · '}{lot.farmerName.split(' ')[0] === 'Ramesh' ? 'Nagpur' : lot.farmerName.split(' ')[0] === 'Sunita' ? 'Wardha' : 'Amravati'}
+                    {' · '}{(lot.farmerName || '').split(' ')[0] === 'Ramesh' ? 'Nagpur' : (lot.farmerName || '').split(' ')[0] === 'Sunita' ? 'Wardha' : 'Amravati'}
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-bold grade-${lot.grade.toLowerCase()}`}>
+                <span className={`px-3 py-1 rounded-full text-sm font-bold grade-${(lot.grade || 'b').toLowerCase()}`}>
                   Grade {lot.grade}
                 </span>
               </div>
@@ -94,7 +96,7 @@ export default function BrowsePage() {
                 {[
                   { label: lang === 'hi' ? 'वजन' : 'Weight', value: `${lot.weightKg} kg` },
                   { label: lang === 'hi' ? 'भाव/kg' : 'Price/kg', value: `₹${lot.pricePerKg}` },
-                  { label: lang === 'hi' ? 'कुल' : 'Total', value: `₹${lot.totalValue.toLocaleString()}` },
+                  { label: lang === 'hi' ? 'कुल' : 'Total', value: `₹${(lot.totalValue || 0).toLocaleString()}` },
                 ].map((item, i) => (
                   <div key={i} className="bg-white/70 rounded-xl p-2 text-center">
                     <div className="text-xs text-gray-400">{item.label}</div>
@@ -112,9 +114,19 @@ export default function BrowsePage() {
                 <span>{lang === 'hi' ? 'अंक:' : 'Score:'} {lot.score}/100</span>
               </div>
 
-              {/* Cert hash */}
-              <div className="text-xs text-gray-400 font-mono mb-3">
-                🔐 {lot.certHash.slice(0, 24)}…
+              {/* Cert hash + verify */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs text-gray-400 font-mono truncate flex-1">
+                  🔐 {lot.certHash ? lot.certHash.slice(0, 24) + '…' : 'Not graded'}
+                </div>
+                {lot.certHash && (
+                  <Link
+                    href={`/operator/certificate/${lot.id}`}
+                    className="ml-2 px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold rounded-lg transition flex-shrink-0"
+                  >
+                    🔐 {lang === 'hi' ? 'प्रमाण-पत्र' : 'Verify Cert'}
+                  </Link>
+                )}
               </div>
 
               <button

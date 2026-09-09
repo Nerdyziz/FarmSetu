@@ -185,6 +185,87 @@ export default function GovernmentDashboard() {
           </table>
         </div>
       </div>
+
+      {/* Live PACS Lots & Agmarknet Quality Audit */}
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🏛️</span>
+            <div>
+              <h2 className="font-bold text-purple-200">
+                {lang === 'hi' ? 'PACS हब वास्तविक समय खरीद और गुणवत्ता निगरानी' : 'Live PACS Hub Procurement & Agmarknet Quality Log'}
+              </h2>
+              <p className="text-xs text-gray-400">
+                {lang === 'hi'
+                  ? 'FSSAI / APEDA / Agmarknet अनुपालन — सीधे PACS वेईब्रिज व YOLOv8 AI से जुड़े'
+                  : 'FSSAI / APEDA / Agmarknet Compliance — Streamed from PACS Weighbridges & Vision AI'}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-mono text-purple-300 bg-purple-950/80 border border-purple-800 px-3 py-1 rounded-full">
+            {lots.length} {lang === 'hi' ? 'लॉट ट्रैक किए गए' : 'Lots Tracked'}
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-400 border-b border-gray-700 uppercase tracking-wider">
+                <th className="pb-2.5 text-left">{lang === 'hi' ? 'लॉट ID' : 'Lot ID'}</th>
+                <th className="pb-2.5 text-left">{lang === 'hi' ? 'किसान' : 'Farmer'}</th>
+                <th className="pb-2.5 text-left">{lang === 'hi' ? 'फसल व वजन' : 'Crop & Weight'}</th>
+                <th className="pb-2.5 text-left">{lang === 'hi' ? 'Agmarknet ग्रेड' : 'Grade'}</th>
+                <th className="pb-2.5 text-left">{lang === 'hi' ? 'गुणवत्ता स्कोर' : 'Score'}</th>
+                <th className="pb-2.5 text-left">{lang === 'hi' ? 'स्थिति' : 'Status'}</th>
+                <th className="pb-2.5 text-left">{lang === 'hi' ? 'SHA-256 प्रमाण-पत्र' : 'Certificate'}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800">
+              {lots.map((lot) => (
+                <tr key={lot.id} className="hover:bg-gray-800/60 transition">
+                  <td className="py-3 font-mono text-gray-300">{lot.id}</td>
+                  <td className="py-3 font-medium text-gray-200">
+                    {lang === 'hi' ? lot.farmerNameHi : lot.farmerName}
+                  </td>
+                  <td className="py-3 text-gray-300">
+                    🍊 {lot.crop} · {lot.weightKg} kg
+                  </td>
+                  <td className="py-3">
+                    {lot.status === 'pending' ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-950 text-orange-400 border border-orange-800">
+                        {lang === 'hi' ? 'जाँच बाकी' : 'Pending'}
+                      </span>
+                    ) : (
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        lot.grade === 'A' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
+                        lot.grade === 'B' ? 'bg-yellow-950 text-yellow-300 border border-yellow-800' :
+                        'bg-red-950 text-red-300 border border-red-800'
+                      }`}>
+                        Grade {lot.grade}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 text-gray-300">
+                    {lot.score ? `${lot.score}/100` : '—'}
+                  </td>
+                  <td className="py-3">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold bg-gray-800 text-gray-300">
+                      {lot.status}
+                    </span>
+                  </td>
+                  <td className="py-3 font-mono text-gray-400">
+                    {lot.certHash ? (
+                      <span className="text-emerald-400">🔐 {lot.certHash.slice(0, 16)}…</span>
+                    ) : (
+                      <span className="text-gray-500">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
