@@ -215,11 +215,11 @@ export default function TruckBookingPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 max-w-6xl w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
             <span>🚛</span>
             <span>{lang === 'hi' ? 'PACS ट्रक बुकिंग और माल समेकन' : 'PACS Truck Booking & Load Consolidation'}</span>
           </h1>
@@ -229,10 +229,10 @@ export default function TruckBookingPage() {
               : 'PACS Operator: Aggregate small farm loads into 10–20T consolidated trucks for transit (corridor-level, independent of individual buyers)'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <Link
             href="/operator/logistics"
-            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5"
+            className="px-3 sm:px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5"
           >
             <span>📡</span>
             <span>{lang === 'hi' ? 'लाइव अरहेनियस टेलीमेट्री' : 'Live Arrhenius Telemetry'}</span>
@@ -242,17 +242,17 @@ export default function TruckBookingPage() {
 
       {/* Booking Confirmation Gate Pass Modal / Alert */}
       {activeBooking && (
-        <div className="bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-6 shadow-md animate-fade-in">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white text-2xl flex items-center justify-center shadow">
+        <div className="bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-4 sm:p-6 shadow-md animate-fade-in">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500 text-white text-xl sm:text-2xl flex items-center justify-center shadow flex-shrink-0">
                 ✅
               </div>
               <div>
-                <span className="text-xs font-bold text-emerald-800 bg-emerald-200/60 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="text-[10px] sm:text-xs font-bold text-emerald-800 bg-emerald-200/60 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   {lang === 'hi' ? 'ट्रक सफलतापूर्वक बुक हुआ!' : 'Truck Booked & Dispatched!'}
                 </span>
-                <h2 className="text-xl font-bold text-emerald-950 mt-1">
+                <h2 className="text-lg sm:text-xl font-bold text-emerald-950 mt-1 break-words">
                   Gate Pass #{activeBooking.bookingId} — {activeBooking.manifestNo}
                 </h2>
                 <div className="text-xs text-emerald-800 mt-0.5">
@@ -262,11 +262,11 @@ export default function TruckBookingPage() {
             </div>
             <button
               onClick={() => setActiveBooking(null)}
-              className="text-emerald-700 hover:text-emerald-900 text-lg font-bold p-1"
+              className="text-emerald-700 hover:text-emerald-900 text-lg font-bold p-1 flex-shrink-0"
             >✕</button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-xs bg-white/80 p-3.5 rounded-xl border border-emerald-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-xs bg-white/80 p-3.5 rounded-xl border border-emerald-200">
             <div>
               <span className="text-gray-500">{lang === 'hi' ? 'समेकित वजन:' : 'Consolidated Load:'}</span>
               <div className="font-bold text-gray-800 text-sm">{activeBooking.totalWeightKg} kg ({activeBooking.totalCrates} crates)</div>
@@ -304,19 +304,20 @@ export default function TruckBookingPage() {
             </span>
           </div>
 
-          <div className="flex gap-3 mt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4">
             <Link
               href="/operator/logistics"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow transition flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"
             >
               <span>📡</span>
               <span>{lang === 'hi' ? 'अरहेनियस गेज पर लाइव ट्रैक करें' : 'Track on Arrhenius Live Monitor'}</span>
             </Link>
             <button
               onClick={() => window.print()}
-              className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-semibold text-xs rounded-xl transition"
+              className="px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-semibold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
             >
-              🖨️ {lang === 'hi' ? 'गेट पास प्रिंट करें' : 'Print Waybill Manifest'}
+              <span>🖨️</span>
+              <span>{lang === 'hi' ? 'गेट पास प्रिंट करें' : 'Print Waybill Manifest'}</span>
             </button>
           </div>
         </div>
@@ -327,17 +328,17 @@ export default function TruckBookingPage() {
         {/* Left Column: Lot Consolidation Selector */}
         <div className="lg:col-span-7 space-y-6">
           {/* STEP 1: Select Lots to Load */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
+                <span className="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0">
                   1
                 </span>
-                <h2 className="font-bold text-gray-800 text-base">
+                <h2 className="font-bold text-gray-800 text-sm sm:text-base">
                   {lang === 'hi' ? 'PACS कोल्ड स्टोर में तैयार लॉट चुनें (Consolidation)' : 'Select Graded Lots Staged at PACS'}
                 </h2>
               </div>
-              <span className="text-xs text-blue-700 font-semibold bg-blue-50 px-2.5 py-1 rounded-full">
+              <span className="text-xs text-blue-700 font-semibold bg-blue-50 px-2.5 py-1 rounded-full whitespace-nowrap">
                 {selectedLots.length} / {stagedLots.length} {lang === 'hi' ? 'चयनित' : 'Selected'}
               </span>
             </div>
@@ -361,7 +362,7 @@ export default function TruckBookingPage() {
                   <div
                     key={lot.id}
                     onClick={() => toggleLot(lot.id)}
-                    className={`p-3.5 rounded-xl border-2 transition cursor-pointer flex items-center justify-between gap-3 ${
+                    className={`p-3.5 rounded-xl border-2 transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 ${
                       isChecked
                         ? 'border-blue-500 bg-blue-50/50 shadow-sm'
                         : 'border-gray-200 bg-white hover:border-gray-300'
@@ -372,16 +373,16 @@ export default function TruckBookingPage() {
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => {}} // handled by parent div onClick
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-400 cursor-pointer"
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-400 cursor-pointer flex-shrink-0"
                       />
                       <div>
-                        <div className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                        <div className="font-bold text-gray-800 text-sm flex flex-wrap items-center gap-2">
                           <span>{lang === 'hi' ? lot.farmerNameHi : lot.farmerName}</span>
                           <span className="text-[11px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">
                             {lot.id}
                           </span>
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
+                        <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-center gap-1.5">
                           <span>🍊 {lot.crop}</span>
                           <span>•</span>
                           <span>{crates} {lang === 'hi' ? 'क्रेट' : 'crates'}</span>
@@ -391,7 +392,7 @@ export default function TruckBookingPage() {
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center pl-7 sm:pl-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                       <div className="font-bold text-gray-900 text-sm">{lot.weightKg} kg</div>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase grade-${lot.grade.toLowerCase()}`}>
                         Grade {lot.grade}
@@ -571,7 +572,7 @@ export default function TruckBookingPage() {
             <button
               onClick={handleBookTruck}
               disabled={isBooking || selectedLots.length === 0}
-              className="w-full py-3.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-600 hover:to-indigo-700 text-white font-bold text-sm rounded-xl shadow-md transition disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-600 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition disabled:opacity-40 flex items-center justify-center gap-2 text-center"
             >
               {isBooking ? (
                 <span>⏳ {lang === 'hi' ? 'ट्रक बुक हो रहा है और गेट पास जारी हो रहा है…' : 'Booking Truck & Generating Manifest…'}</span>
@@ -596,7 +597,7 @@ export default function TruckBookingPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs min-w-[640px]">
             <thead className="bg-gray-50 text-gray-500 uppercase">
               <tr>
                 <th className="px-4 py-3 text-left">Manifest / Gate Pass</th>

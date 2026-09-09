@@ -10,33 +10,34 @@ function GovLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <header className="bg-gray-900 border-b border-purple-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🏛️</span>
-          <div>
-            <div className="font-bold text-lg leading-none text-purple-200">FarmSetu</div>
-            <div className="text-xs text-purple-400">
+      <header className="bg-gray-900 border-b border-purple-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-40">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <span className="text-2xl flex-shrink-0">🏛️</span>
+          <div className="min-w-0">
+            <div className="font-bold text-base sm:text-lg leading-none text-purple-200 truncate">FarmSetu</div>
+            <div className="text-[11px] sm:text-xs text-purple-400 truncate">
               {lang === 'hi' ? 'DoCA / PMD निगरानी पोर्टल' : 'DoCA / PMD Monitoring Portal'}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <div className="flex items-center gap-1.5 text-xs text-green-400">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            {lang === 'hi' ? 'लाइव' : 'Live'}
+            <span className="hidden xs:inline">{lang === 'hi' ? 'लाइव' : 'Live'}</span>
           </div>
           <button
             onClick={toggleLang}
-            className="px-3 py-1 rounded-full bg-purple-900 hover:bg-purple-800 text-sm text-purple-200 transition"
+            className="px-2.5 py-1 sm:px-3 sm:py-1 rounded-full bg-purple-900 hover:bg-purple-800 text-xs sm:text-sm text-purple-200 transition font-medium"
           >
-            {lang === 'en' ? '🇮🇳 हिंदी' : '🇬🇧 English'}
+            {lang === 'en' ? '🇮🇳 हिंदी' : '🇬🇧 EN'}
           </button>
-          <Link href="/" className="text-sm text-gray-400 hover:text-gray-200 transition">
-            ← {lang === 'hi' ? 'वापस' : 'Home'}
+          <Link href="/" className="text-xs sm:text-sm text-gray-400 hover:text-gray-200 transition px-2 py-1 flex items-center gap-1">
+            <span>←</span>
+            <span className="hidden xs:inline">{lang === 'hi' ? 'वापस' : 'Home'}</span>
           </Link>
         </div>
       </header>
-      <main className="p-6">{children}</main>
+      <main className="p-3 sm:p-5 lg:p-6 max-w-7xl mx-auto w-full">{children}</main>
     </div>
   )
 }

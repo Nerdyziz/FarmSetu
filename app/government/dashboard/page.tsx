@@ -48,45 +48,45 @@ export default function GovernmentDashboard() {
   ]
 
   return (
-    <div className="space-y-6 max-w-7xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-purple-100">{t('govDashboard')}</h1>
-        <div className="text-sm text-gray-400">
+    <div className="space-y-6 max-w-7xl w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold text-purple-100">{t('govDashboard')}</h1>
+        <div className="text-xs sm:text-sm text-gray-400">
           {lang === 'hi' ? 'नागपुर → मुंबई कॉरिडोर · लाइव डेटा' : 'Nagpur → Mumbai Corridor · Live Data'}
         </div>
       </div>
 
       {/* Shortage alert */}
       <div className="bg-red-950 border border-red-700 rounded-2xl p-4 flex items-start gap-3">
-        <span className="text-2xl">⚠️</span>
+        <span className="text-2xl flex-shrink-0">⚠️</span>
         <div>
-          <div className="font-bold text-red-300 text-lg">
+          <div className="font-bold text-red-300 text-base sm:text-lg">
             {lang === 'hi' ? 'कमी अलर्ट — संतरा' : 'Shortage Alert — Orange'}
           </div>
-          <div className="text-red-400 text-sm mt-1">
+          <div className="text-red-400 text-xs sm:text-sm mt-1">
             {lang === 'hi'
               ? 'मुंबई में संतरे की आपूर्ति अगले 7 दिनों में 18% कम होने का अनुमान है। PSF बफर रिलीज की सिफारिश।'
               : 'Orange supply in Mumbai forecast to drop 18% over next 7 days. Recommend PSF buffer release.'}
           </div>
-          <button className="mt-2 px-4 py-1.5 bg-red-700 hover:bg-red-600 text-white text-sm rounded-lg transition">
+          <button className="mt-2 px-3.5 py-1.5 bg-red-700 hover:bg-red-600 text-white text-xs sm:text-sm rounded-lg transition">
             {lang === 'hi' ? 'PSF एक्शन लें' : 'Trigger PSF Action'}
           </button>
         </div>
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((k, i) => (
-          <div key={i} className="bg-gray-900 border border-gray-700 rounded-2xl p-4">
-            <div className="text-2xl mb-1">{k.icon}</div>
-            <div className="text-xs text-gray-400">{k.label[lang]}</div>
-            <div className={`text-2xl font-bold mt-1 ${k.color}`}>{k.value}</div>
+          <div key={i} className="bg-gray-900 border border-gray-700 rounded-2xl p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl mb-1">{k.icon}</div>
+            <div className="text-[11px] sm:text-xs text-gray-400">{k.label[lang]}</div>
+            <div className={`text-xl sm:text-2xl font-bold mt-1 ${k.color}`}>{k.value}</div>
           </div>
         ))}
       </div>
 
       {/* Price Forecast Area Chart */}
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-5">
         <h2 className="font-bold text-purple-200 mb-1">{t('priceForecast')}</h2>
         <p className="text-xs text-gray-400 mb-4">
           {lang === 'hi' ? 'TFT मॉडल से P10/P50/P90 बैंड — नागपुर संतरा' : 'TFT model P10/P50/P90 bands — Nagpur Orange (₹/kg)'}
@@ -117,7 +117,7 @@ export default function GovernmentDashboard() {
             <Area type="monotone" dataKey="p10" name="P10 (Low)" stroke="#10b981" fill="none" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
           </AreaChart>
         </ResponsiveContainer>
-        <div className="flex gap-6 mt-2 text-xs">
+        <div className="flex flex-wrap gap-4 sm:gap-6 mt-2 text-xs">
           {[
             { color: '#7c3aed', label: t('p90Label') },
             { color: '#06b6d4', label: t('p50Label') },
@@ -152,10 +152,10 @@ export default function GovernmentDashboard() {
       </div>
 
       {/* Corridor stats table */}
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-5">
         <h2 className="font-bold text-purple-200 mb-4">{t('corridorStats')}</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[650px]">
             <thead>
               <tr className="text-gray-400 border-b border-gray-700">
                 <th className="pb-2 text-left">{lang === 'hi' ? 'कॉरिडोर' : 'Corridor'}</th>
@@ -199,12 +199,12 @@ export default function GovernmentDashboard() {
       </div>
 
       {/* Live PACS Lots & Agmarknet Quality Audit */}
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <span className="text-xl">🏛️</span>
             <div>
-              <h2 className="font-bold text-purple-200">
+              <h2 className="font-bold text-purple-200 text-sm sm:text-base">
                 {lang === 'hi' ? 'PACS हब वास्तविक समय खरीद और गुणवत्ता निगरानी' : 'Live PACS Hub Procurement & Agmarknet Quality Log'}
               </h2>
               <p className="text-xs text-gray-400">
@@ -214,13 +214,13 @@ export default function GovernmentDashboard() {
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono text-purple-300 bg-purple-950/80 border border-purple-800 px-3 py-1 rounded-full">
+          <span className="self-start sm:self-auto text-xs font-mono text-purple-300 bg-purple-950/80 border border-purple-800 px-3 py-1 rounded-full whitespace-nowrap">
             {lots.length} {lang === 'hi' ? 'लॉट ट्रैक किए गए' : 'Lots Tracked'}
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs min-w-[650px]">
             <thead>
               <tr className="text-gray-400 border-b border-gray-700 uppercase tracking-wider">
                 <th className="pb-2.5 text-left">{lang === 'hi' ? 'लॉट ID' : 'Lot ID'}</th>

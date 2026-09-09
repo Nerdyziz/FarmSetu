@@ -130,11 +130,11 @@ export default function ProcessorBidsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 max-w-6xl w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
             <span>🏭</span>
             <span>
               {lang === 'hi'
@@ -149,7 +149,7 @@ export default function ProcessorBidsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 ${
               isLiveDb
@@ -172,10 +172,10 @@ export default function ProcessorBidsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 bg-white rounded-t-2xl px-4 pt-2 gap-2 overflow-x-auto text-xs font-semibold">
+      <div className="flex border-b border-gray-200 bg-white rounded-t-2xl px-3 sm:px-4 pt-2 gap-1.5 sm:gap-2 overflow-x-auto whitespace-nowrap text-xs font-semibold">
         <button
           onClick={() => setActiveTab('bids')}
-          className={`px-4 py-3 border-b-2 transition flex items-center gap-2 ${
+          className={`px-3 sm:px-4 py-3 border-b-2 transition flex items-center gap-2 flex-shrink-0 ${
             activeTab === 'bids'
               ? 'border-blue-600 text-blue-700'
               : 'border-transparent text-gray-500 hover:text-gray-800'
@@ -417,10 +417,10 @@ export default function ProcessorBidsPage() {
 
           {/* Diversion Match Confirmation Box */}
           {selectedLotForDivert && selectedBidForDivert && (
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-400 rounded-2xl p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">⚡</span>
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-400 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-2">
+                  <span className="text-2xl flex-shrink-0">⚡</span>
                   <div>
                     <h3 className="font-bold text-orange-950 text-base">
                       {lang === 'hi' ? 'डायवर्जन और साल्वेज समझौता' : 'Diversion & Salvage Match Ready'}
@@ -430,7 +430,7 @@ export default function ProcessorBidsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right pl-8 sm:pl-0">
                   <div className="text-xs text-orange-800">Recovered Salvage Cash</div>
                   <div className="text-2xl font-bold text-emerald-800">
                     ₹{(selectedLotForDivert.weightKg * selectedBidForDivert.pricePerKg).toLocaleString()}
@@ -438,7 +438,7 @@ export default function ProcessorBidsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 text-xs bg-white/80 p-3 rounded-xl border border-orange-200">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-white/80 p-3 rounded-xl border border-orange-200">
                 <div>
                   <span className="text-gray-500">Farmer Payee:</span>
                   <div className="font-bold text-gray-800">{selectedLotForDivert.farmerName}</div>
@@ -456,7 +456,7 @@ export default function ProcessorBidsPage() {
               <button
                 onClick={handleExecuteDiversion}
                 disabled={isDiverting}
-                className="w-full py-3.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold text-sm rounded-xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-center"
               >
                 {isDiverting ? (
                   <span>⏳ Creating Diversion Order in Supabase…</span>
@@ -504,7 +504,7 @@ export default function ProcessorBidsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">Commodity *</label>
                 <select
@@ -535,7 +535,7 @@ export default function ProcessorBidsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">
                   Max Procurement Radius (km)
@@ -563,7 +563,7 @@ export default function ProcessorBidsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">Plant Location</label>
                 <input
@@ -590,7 +590,7 @@ export default function ProcessorBidsPage() {
             <button
               type="submit"
               disabled={isSubmittingBid}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
+              className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50 text-center"
             >
               {isSubmittingBid ? 'Saving to Supabase Database…' : '➕ Save Standing Bid to Supabase'}
             </button>
@@ -611,7 +611,7 @@ export default function ProcessorBidsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-xs min-w-[650px]">
               <thead className="bg-gray-50 text-gray-500 uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">Order ID</th>

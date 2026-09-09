@@ -92,9 +92,9 @@ export default function OperatorDashboard() {
   ]
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 max-w-6xl w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-800">{t('operatorDashboard')}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{t('operatorDashboard')}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/operator/truck-booking"
@@ -119,12 +119,12 @@ export default function OperatorDashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {kpis.map((kpi, i) => (
-          <div key={i} className={`border rounded-2xl p-4 ${kpi.color}`}>
-            <div className="text-2xl mb-1">{kpi.icon}</div>
-            <div className="text-xs font-medium opacity-70">{kpi.label[lang]}</div>
-            <div className="text-2xl font-bold mt-1">{kpi.value}</div>
+          <div key={i} className={`border rounded-2xl p-3 sm:p-4 ${kpi.color}`}>
+            <div className="text-xl sm:text-2xl mb-1">{kpi.icon}</div>
+            <div className="text-[11px] sm:text-xs font-medium opacity-70">{kpi.label[lang]}</div>
+            <div className="text-xl sm:text-2xl font-bold mt-1">{kpi.value}</div>
           </div>
         ))}
       </div>
@@ -274,7 +274,7 @@ export default function OperatorDashboard() {
           <span className="text-sm text-gray-400">{lots.length} lots</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[650px]">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
               <tr>
                 <th className="px-4 py-3 text-left">{lang === 'hi' ? 'लॉट ID' : 'Lot ID'}</th>

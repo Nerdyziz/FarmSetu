@@ -12,10 +12,16 @@
   }
 }
 
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  min-height: 100vh;
 }
 
 /* Force dark black text and dark visible placeholders across all inputs, textareas, selects */

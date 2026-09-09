@@ -107,44 +107,45 @@ export default function HarvestSlotPage() {
   })
 
   return (
-    <div className="px-4 pt-5 space-y-5 max-w-lg mx-auto">
-      <h1 className="text-xl font-bold text-gray-800">
+    <div className="px-3 sm:px-4 pt-4 sm:pt-6 space-y-4 sm:space-y-5 max-w-xl mx-auto w-full">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
         {lang === 'hi' ? '📅 कब काटें?' : '📅 When to Harvest?'}
       </h1>
 
       {/* Main advice card */}
-      <div className={`rounded-2xl p-5 border-2 ${config.border} ${config.bg} shadow`}>
+      <div className={`rounded-2xl p-4 sm:p-5 border-2 ${config.border} ${config.bg} shadow-xs`}>
         <div className="flex items-start gap-3 mb-4">
-          <span className="text-5xl leading-none">{config.emoji}</span>
+          <span className="text-4xl sm:text-5xl leading-none flex-shrink-0">{config.emoji}</span>
           <div>
-            <div className="text-xl font-bold text-gray-800 leading-tight">{config[lang].label}</div>
-            <div className="text-sm text-gray-600 mt-1">{config[lang].note}</div>
+            <div className="text-lg sm:text-xl font-bold text-gray-800 leading-tight">{config[lang].label}</div>
+            <div className="text-xs sm:text-sm text-gray-600 mt-1">{config[lang].note}</div>
           </div>
         </div>
 
         {/* Date range highlight */}
-        <div className="bg-white/80 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-white/90 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between shadow-xs gap-3">
           <div>
-            <div className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">
+            <div className="text-[11px] sm:text-xs text-gray-500 font-semibold uppercase tracking-wide mb-0.5">
               {lang === 'hi' ? 'कटाई खिड़की' : 'Harvest Window'}
             </div>
-            <div className="text-2xl font-bold text-gray-800">{dateRange.short}</div>
-            <div className="text-xs text-gray-500 mt-1">{dateRange.full}</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-800">{dateRange.short}</div>
+            <div className="text-[11px] sm:text-xs text-gray-500 mt-0.5">{dateRange.full}</div>
           </div>
-          <div className="text-right">
-            <div className="text-xs text-gray-400 mb-1">{lang === 'hi' ? 'अनुमानित भाव' : 'Expected Price'}</div>
-            <div className="text-2xl font-bold text-green-700">₹{slot.priceExpected}/kg</div>
-            <div className="text-xs text-gray-400">{lang === 'hi' ? 'औसत' : 'average'}</div>
+          <div className="text-right flex-shrink-0">
+            <div className="text-[11px] sm:text-xs text-gray-500 mb-0.5">{lang === 'hi' ? 'अनुमानित भाव' : 'Expected Price'}</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-700">₹{slot.priceExpected}/kg</div>
+            <div className="text-[10px] sm:text-xs text-gray-400">{lang === 'hi' ? 'औसत' : 'average'}</div>
           </div>
         </div>
       </div>
 
       {/* 9-day mini calendar */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
         <div className="text-sm font-bold text-gray-700 mb-3">
           {lang === 'hi' ? '9 दिन का भाव अनुमान' : '9-Day Price Estimate'}
         </div>
-        <div className="grid grid-cols-9 gap-0.5">
+        <div className="overflow-x-auto pb-1 scrollbar-none">
+          <div className="grid grid-cols-9 gap-1 min-w-[340px]">
           {calDays.map((d, i) => (
             <div
               key={i}
@@ -174,6 +175,7 @@ export default function HarvestSlotPage() {
               </div>
             </div>
           ))}
+          </div>
         </div>
 
         {/* Window label below */}

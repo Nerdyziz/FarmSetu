@@ -273,10 +273,10 @@ export default function OperatorQualityPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <div className="space-y-4 sm:space-y-6 max-w-6xl mx-auto w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
             {lang === 'hi' ? '🔬 गुणवत्ता जाँच और YOLOv8 विज़न स्कैन' : '🔬 Quality Grading & YOLOv8 Vision Scan'}
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -285,30 +285,30 @@ export default function OperatorQualityPage() {
               : 'PACS Hub Operator: Upload crate photos, run edge YOLOv8 detection for blemishes & issue certified grades'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold border border-emerald-300 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            YOLOv8-Agri Edge INT8 Active
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold border border-emerald-300 flex items-center gap-1.5 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+            <span>YOLOv8-Agri Edge INT8 Active</span>
           </span>
         </div>
       </div>
 
       {/* ── PENDING LOTS QUEUE ─────────────────────────────── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden">
-        <div className="px-5 py-4 bg-orange-50 border-b border-orange-100 flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-xs border border-orange-100 overflow-hidden">
+        <div className="px-4 sm:px-5 py-3 sm:py-4 bg-orange-50/80 border-b border-orange-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">📥</span>
-            <h2 className="font-bold text-orange-800">
+            <h2 className="font-bold text-sm sm:text-base text-orange-800">
               {lang === 'hi' ? 'जाँच बाकी लॉट (किसानों द्वारा जमा)' : 'Lots Awaiting PACS Grading (Farmer Drop-offs)'}
             </h2>
           </div>
-          <span className="bg-orange-500 text-white text-xs px-2.5 py-1 rounded-full font-bold">
+          <span className="bg-orange-500 text-white text-[11px] sm:text-xs px-2.5 py-0.5 sm:py-1 rounded-full font-bold">
             {loadingLots ? '…' : ungraded.length} {lang === 'hi' ? 'बाकी' : 'Pending'}
           </span>
         </div>
 
         {loadingLots ? (
-          <div className="p-6 text-center text-gray-400 animate-pulse">
+          <div className="p-6 text-center text-gray-400 animate-pulse text-xs sm:text-sm">
             {lang === 'hi' ? '⏳ Supabase से लोड हो रहा है…' : '⏳ Loading from Supabase…'}
           </div>
         ) : ungraded.length === 0 ? (
@@ -319,16 +319,16 @@ export default function OperatorQualityPage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {ungraded.map((lot) => (
-              <div key={lot.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50 transition">
+              <div key={lot.id} className="px-4 sm:px-5 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50 transition">
                 <div>
-                  <div className="font-semibold text-gray-800">
-                    {lang === 'hi' ? lot.farmerNameHi : lot.farmerName}
-                    <span className="ml-2 text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-mono font-medium">{lot.id}</span>
+                  <div className="font-semibold text-gray-800 text-sm sm:text-base flex items-center gap-2 flex-wrap">
+                    <span>{lang === 'hi' ? lot.farmerNameHi : lot.farmerName}</span>
+                    <span className="text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-mono font-medium">{lot.id}</span>
                   </div>
-                  <div className="text-sm text-gray-500 mt-0.5">
+                  <div className="text-xs sm:text-sm text-gray-500 mt-0.5">
                     🍊 {lot.crop} · {lot.weightKg} kg
                   </div>
-                  <div className="text-xs text-orange-600 mt-0.5 font-semibold">
+                  <div className="text-[11px] sm:text-xs text-orange-600 mt-0.5 font-semibold">
                     ⏳ {lang === 'hi' ? 'जाँच बाकी — PACS में पहुँचा' : 'Awaiting inspection — arrived at PACS'}
                   </div>
                 </div>
@@ -337,7 +337,7 @@ export default function OperatorQualityPage() {
                     setSelectedLot(lot)
                     selectPresetCrate('A')
                   }}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition flex items-center justify-center gap-2 flex-shrink-0 active:scale-95"
                 >
                   <span>📷</span>
                   <span>{lang === 'hi' ? 'YOLOv8 से जाँचें' : 'Scan & Grade with YOLOv8'}</span>
@@ -351,7 +351,7 @@ export default function OperatorQualityPage() {
 
       {/* ── GRADING MODAL / PANEL WITH YOLOv8 SCANNER ──────── */}
       {selectedLot && (
-        <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-500 p-6 transition-all">
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-500 p-3.5 sm:p-6 transition-all">
           <div className="flex items-start justify-between border-b border-gray-100 pb-4 mb-5">
             <div>
               <div className="flex items-center gap-2">
@@ -408,30 +408,32 @@ export default function OperatorQualityPage() {
 
             {/* Test Presets Quick Selector */}
             <div className="flex flex-wrap items-center gap-2 mb-4 text-xs">
-              <span className="text-indigo-300 font-medium">
+              <span className="text-indigo-300 font-medium w-full sm:w-auto">
                 {lang === 'hi' ? 'त्वरित टेस्ट नमूना चुनें:' : 'Or choose verified crate sample:'}
               </span>
-              <button
-                type="button"
-                onClick={() => selectPresetCrate('A')}
-                className="px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-medium transition"
-              >
-                🍊 Sample A (Grade A - 94% Uniform, Clean)
-              </button>
-              <button
-                type="button"
-                onClick={() => selectPresetCrate('B')}
-                className="px-3 py-1.5 rounded-lg bg-yellow-950/80 hover:bg-yellow-900 border border-yellow-500/50 text-yellow-300 font-medium transition"
-              >
-                🍊 Sample B (Grade B - Thrip Blemishes)
-              </button>
-              <button
-                type="button"
-                onClick={() => selectPresetCrate('C')}
-                className="px-3 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-300 font-medium transition"
-              >
-                🍊 Sample C (Grade C - Heavy Rot/Processing)
-              </button>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectPresetCrate('A')}
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-medium transition text-[11px] sm:text-xs"
+                >
+                  🍊 Sample A (Grade A)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectPresetCrate('B')}
+                  className="px-2.5 py-1.5 rounded-lg bg-yellow-950/80 hover:bg-yellow-900 border border-yellow-500/50 text-yellow-300 font-medium transition text-[11px] sm:text-xs"
+                >
+                  🍊 Sample B (Grade B)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectPresetCrate('C')}
+                  className="px-2.5 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-300 font-medium transition text-[11px] sm:text-xs"
+                >
+                  🍊 Sample C (Grade C)
+                </button>
+              </div>
             </div>
 
             {/* YOLOv8 Scanning Viewport with Bounding Boxes */}
@@ -654,11 +656,11 @@ export default function OperatorQualityPage() {
 
           {/* Grade thresholds guide */}
           <div className="bg-gray-50 rounded-xl p-3 mb-4 text-xs border border-gray-200">
-            <div className="font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
-              <span>{lang === 'hi' ? 'सरकारी Agmarknet / FSSAI श्रेणी मापदंड:' : 'Agmarknet / FSSAI Official Grade Thresholds:'}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+              <span className="font-semibold text-gray-700">{lang === 'hi' ? 'सरकारी Agmarknet / FSSAI श्रेणी मापदंड:' : 'Agmarknet / FSSAI Official Grade Thresholds:'}</span>
               <span className="text-gray-400 text-[10px]">Algorithm: ATC-YOLOv5 + ResNet50 NIR</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="grade-a p-2 rounded-lg border border-emerald-300">
                 <strong>Grade A (Premium):</strong> Brix ≥ 10, Blemish ≤ 8%, Uniformity ≥ 85%
               </div>
@@ -673,7 +675,7 @@ export default function OperatorQualityPage() {
 
           {/* Escrow note */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-xs text-blue-900 flex items-start gap-2">
-            <span className="text-base">ℹ️</span>
+            <span className="text-base flex-shrink-0">ℹ️</span>
             <div>
               <strong>{lang === 'hi' ? 'एस्क्रो फंड प्रक्रिया:' : 'Escrow Fund Protocol:'}</strong>
               <span className="ml-1">
@@ -687,7 +689,7 @@ export default function OperatorQualityPage() {
           <button
             onClick={handleGrade}
             disabled={grading || !form.brixPct || !form.blemishPct || !form.uniformity}
-            className="w-full py-3.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold transition shadow-md disabled:opacity-40 flex items-center justify-center gap-2"
+            className="w-full py-3.5 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm transition shadow-md disabled:opacity-40 flex items-center justify-center gap-2 text-center"
           >
             {grading ? (
               <span>⏳ {lang === 'hi' ? 'SHA-256 सर्टिफिकेट और श्रेणी तैयार हो रही है…' : 'Generating SHA-256 Certificate & Grade…'}</span>

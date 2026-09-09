@@ -130,20 +130,20 @@ export default function CertificatePage({ params }: { params: Promise<{ lotId: s
       {/* ── CERTIFICATE CARD ──────────────────────────── */}
       <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl border-2 border-emerald-200 overflow-hidden print:shadow-none print:border-gray-300">
         {/* Header stripe */}
-        <div className="bg-gradient-to-r from-emerald-700 to-teal-700 px-8 py-6 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-emerald-700 to-teal-700 px-5 sm:px-8 py-5 sm:py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div>
-            <div className="text-emerald-100 text-xs font-semibold tracking-widest uppercase mb-1">
+            <div className="text-emerald-100 text-[10px] sm:text-xs font-semibold tracking-widest uppercase mb-1">
               {lang === 'hi' ? 'FarmSetu — राष्ट्रीय कृषि डिजिटल मिशन' : 'FarmSetu — National Agricultural Digital Mission'}
             </div>
-            <h1 className="text-white text-2xl font-bold">
+            <h1 className="text-white text-xl sm:text-2xl font-bold">
               {lang === 'hi' ? '🔐 गुणवत्ता प्रमाण-पत्र' : '🔐 Quality Certificate'}
             </h1>
-            <div className="text-emerald-200 text-sm mt-0.5">
+            <div className="text-emerald-200 text-xs sm:text-sm mt-0.5">
               {lang === 'hi' ? 'SHA-256 क्रिप्टोग्राफिक हैश से प्रमाणित' : 'Cryptographically Secured with SHA-256'}
             </div>
           </div>
           {/* Grade seal */}
-          <div className={`w-20 h-20 rounded-full flex flex-col items-center justify-center font-black text-3xl border-4 shadow-lg
+          <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex flex-col items-center justify-center font-black text-2xl sm:text-3xl border-4 shadow-lg flex-shrink-0
             ${lot.grade === 'A' ? 'bg-emerald-500 border-emerald-200 text-white' :
               lot.grade === 'B' ? 'bg-yellow-500 border-yellow-200 text-white' :
               'bg-red-500 border-red-200 text-white'}`}
@@ -154,17 +154,17 @@ export default function CertificatePage({ params }: { params: Promise<{ lotId: s
         </div>
 
         {/* Body */}
-        <div className="px-8 py-6 space-y-6">
+        <div className="px-4 sm:px-8 py-5 sm:py-6 space-y-6">
           {/* Grade label */}
-          <div className={`${gs.bg} ${gs.border} border-2 rounded-2xl px-5 py-3 flex items-center gap-3`}>
+          <div className={`${gs.bg} ${gs.border} border-2 rounded-2xl px-4 sm:px-5 py-3 flex items-center gap-3`}>
             <span className="text-2xl">
               {lot.grade === 'A' ? '⭐' : lot.grade === 'B' ? '🟡' : '🔴'}
             </span>
             <div>
-              <div className={`font-bold text-lg ${gs.text}`}>
+              <div className={`font-bold text-base sm:text-lg ${gs.text}`}>
                 {lang === 'hi' ? gs.labelHi : gs.label}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500">
                 {lang === 'hi' ? `गुणवत्ता स्कोर: ${lot.score}/100` : `Quality Score: ${lot.score}/100`}
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function CertificatePage({ params }: { params: Promise<{ lotId: s
             <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
               {lang === 'hi' ? 'लॉट विवरण' : 'Lot Details'}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {[
                 { label: lang === 'hi' ? 'लॉट ID' : 'Lot ID', value: lot.id, mono: true },
                 { label: lang === 'hi' ? 'फसल' : 'Crop', value: lot.crop },
@@ -221,18 +221,18 @@ export default function CertificatePage({ params }: { params: Promise<{ lotId: s
           </div>
 
           {/* QR Code + verification info */}
-          <div className="flex flex-col sm:flex-row items-center gap-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
-            <div className="flex-shrink-0">
-              <QrCodeSvg value={certHash} size={170} />
-              <div className="text-xs text-center text-gray-500 mt-2">
+          <div className="flex flex-col sm:flex-row items-center gap-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5">
+            <div className="flex-shrink-0 flex flex-col items-center">
+              <QrCodeSvg value={certHash} size={150} />
+              <div className="text-[11px] text-center text-gray-500 mt-2">
                 {lang === 'hi' ? 'स्कैन करें — हैश सत्यापित करें' : 'Scan to verify hash'}
               </div>
             </div>
-            <div className="text-sm text-emerald-800 space-y-2 flex-1">
-              <div className="font-bold text-base">
+            <div className="text-xs sm:text-sm text-emerald-800 space-y-2 flex-1 text-center sm:text-left">
+              <div className="font-bold text-sm sm:text-base">
                 {lang === 'hi' ? '✅ इस प्रमाण-पत्र की विश्वसनीयता' : '✅ Certificate Credibility'}
               </div>
-              <ul className="space-y-1.5 text-emerald-700">
+              <ul className="space-y-1.5 text-emerald-700 text-xs sm:text-sm text-left">
                 <li>🔒 {lang === 'hi' ? 'SHA-256 हैश से डेटा अपरिवर्तनीय है' : 'SHA-256 hash makes data immutable'}</li>
                 <li>📡 {lang === 'hi' ? 'Supabase ब्लॉकचेन-स्तरीय लॉग में सहेजा गया' : 'Saved to blockchain-grade audit log'}</li>
                 <li>🏛️ {lang === 'hi' ? 'Agmarknet / FPO / APMC सत्यापन योग्य' : 'Verifiable by Agmarknet / FPO / APMC'}</li>
@@ -243,13 +243,15 @@ export default function CertificatePage({ params }: { params: Promise<{ lotId: s
           </div>
 
           {/* Disclaimer / footer */}
-          <div className="border-t border-gray-100 pt-4 flex items-center justify-between text-[11px] text-gray-400">
+          <div className="border-t border-gray-100 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-400 text-center sm:text-left">
             <div>
               {lang === 'hi'
                 ? 'यह प्रमाण-पत्र FarmSetu डिजिटल प्रणाली द्वारा PACS संचालक के माध्यम से जारी किया गया है।'
                 : 'This certificate is issued via the FarmSetu digital platform by the authorized PACS operator.'}
             </div>
-            <div className="font-mono text-gray-300">{lot.id}</div>
+            <div className="font-mono text-[10px] text-emerald-700 font-bold whitespace-nowrap">
+              AUTH_NODE // {lot.id}
+            </div>
           </div>
         </div>
       </div>

@@ -374,11 +374,11 @@ export default function OperatorLogisticsPage() {
     : 'text-red-700 bg-red-50 border-red-300'
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 max-w-6xl w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
             <span>📡</span>
             <span>{lang === 'hi' ? 'PACS लॉजिस्टिक्स व लाइव रूट ट्रैकर' : 'PACS Logistics & Live Route Tracker'}</span>
           </h1>
@@ -388,7 +388,7 @@ export default function OperatorLogisticsPage() {
               : 'Consolidated truck dispatches, Arrhenius shelf-life kinetics, corridor milestone tracking & escrow fund release'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/operator/truck-booking"
             className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5"
@@ -407,7 +407,7 @@ export default function OperatorLogisticsPage() {
       </div>
 
       {/* Shipment Selector Tabs */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-gray-100">
         <div className="text-xs font-semibold text-gray-500 mb-2">
           {lang === 'hi' ? 'सक्रिय डिस्पैच / शिपमेंट चुनें (Supabase से जुड़े):' : 'Select Active Dispatch / Shipment (Connected to Supabase):'}
         </div>
@@ -585,7 +585,7 @@ export default function OperatorLogisticsPage() {
 
         {/* Milestone Corridor Stepper */}
         <div className="py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {CORRIDOR_MILESTONES.map((m) => {
               const isPassed = simStep >= m.step
               const isCurrent = simStep === m.step
@@ -756,7 +756,7 @@ export default function OperatorLogisticsPage() {
             ))}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+          <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
             <div className="text-gray-500">
               Linked Produce Lots: <span className="font-mono font-bold text-blue-700">{selectedShipment.lotIds.join(', ')}</span>
             </div>
@@ -772,8 +772,8 @@ export default function OperatorLogisticsPage() {
       </div>
 
       {/* ── TEMPERATURE HISTORY & BLE TELEMETRY CHART ── */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h2 className="font-bold text-gray-800 text-sm">
               {lang === 'hi' ? '🌡️ तापमान इतिहास (BLE टेलीमेट्री Pings)' : '🌡️ Temperature History (BLE Telemetry Pings)'}
@@ -813,10 +813,10 @@ export default function OperatorLogisticsPage() {
 
       {/* ── DIVERSION ENGINE PANEL ── */}
       {(shelfInfo.status !== 'safe' || simScenario === 'excursion') && (
-        <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-5">
-          <div className="flex items-start justify-between">
+        <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div>
-              <h2 className="font-bold text-rose-900 text-lg flex items-center gap-2">
+              <h2 className="font-bold text-rose-900 text-base sm:text-lg flex items-center gap-2">
                 <span>🚨</span>
                 <span>{lang === 'hi' ? 'Diversion Engine सक्रिय — प्रोसेसर को मोड़ें' : 'Diversion Engine Active — Salvage to Processor'}</span>
               </h2>
@@ -828,7 +828,7 @@ export default function OperatorLogisticsPage() {
             </div>
             <Link
               href="/operator/processor-bids"
-              className="text-xs font-semibold text-rose-700 bg-rose-100 hover:bg-rose-200 px-3 py-1.5 rounded-xl transition"
+              className="text-xs font-semibold text-rose-700 bg-rose-100 hover:bg-rose-200 px-3 py-1.5 rounded-xl transition self-start sm:self-auto whitespace-nowrap"
             >
               {lang === 'hi' ? 'सभी बोलियाँ देखें →' : 'View All Bids →'}
             </Link>

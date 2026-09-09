@@ -94,25 +94,25 @@ export default function FarmerDashboard() {
       : { en: '🔴 Diverted', hi: '🔴 मोड़ा गया' }
 
   return (
-    <div className="px-4 pt-5 space-y-5 max-w-lg mx-auto">
+    <div className="px-3 sm:px-4 pt-4 sm:pt-6 space-y-4 sm:space-y-5 max-w-xl mx-auto w-full">
       {/* Welcome */}
-      <div className="bg-gradient-to-r from-orange-400 to-green-500 text-white rounded-2xl p-5 shadow">
-        <div className="text-2xl font-bold">{lang === 'hi' ? 'नमस्ते 🙏' : 'Welcome 🙏'}</div>
-        <div className="text-lg font-semibold mt-1">{DEMO_FARMER_NAME[lang]}</div>
-        <div className="text-sm opacity-80 mt-0.5">
+      <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-green-600 text-white rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="text-xl sm:text-2xl font-bold">{lang === 'hi' ? 'नमस्ते 🙏' : 'Welcome 🙏'}</div>
+        <div className="text-base sm:text-lg font-semibold mt-0.5">{DEMO_FARMER_NAME[lang]}</div>
+        <div className="text-xs sm:text-sm opacity-90 mt-0.5">
           {lang === 'hi' ? 'नागपुर, महाराष्ट्र' : 'Nagpur, Maharashtra'}
         </div>
       </div>
 
       {/* Money cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-green-100 flex flex-col justify-between">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-green-100 flex flex-col justify-between">
           <div>
-            <div className="text-2xl mb-1">💰</div>
-            <div className="text-xs text-gray-500">{t('totalEarned')}</div>
-            <div className="text-2xl font-bold text-green-700">₹{totalEarned.toLocaleString('hi-IN')}</div>
+            <div className="text-xl sm:text-2xl mb-1">💰</div>
+            <div className="text-[11px] sm:text-xs text-gray-500 font-medium">{t('totalEarned')}</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-700 tracking-tight">₹{totalEarned.toLocaleString('hi-IN')}</div>
           </div>
-          <div className="mt-2 pt-2 border-t border-green-50 text-[11px] font-semibold text-green-800">
+          <div className="mt-2 pt-2 border-t border-green-50 text-[10px] sm:text-[11px] font-semibold text-green-800 leading-tight">
             {totalEarned === 0
               ? (lang === 'hi' ? '🔒 लॉट ग्रेडेड (ट्रक बुकिंग पर 70%)' : '🔒 Graded (70% on Truck Booking)')
               : myLots.some((l) => l.escrowState === 'FULLY_RELEASED')
@@ -120,13 +120,13 @@ export default function FarmerDashboard() {
               : (lang === 'hi' ? '✅ 70% अग्रिम प्राप्त' : '✅ 70% Advance Paid')}
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100 flex flex-col justify-between">
+        <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-orange-100 flex flex-col justify-between">
           <div>
-            <div className="text-2xl mb-1">⏳</div>
-            <div className="text-xs text-gray-500">{t('pending')}</div>
-            <div className="text-2xl font-bold text-orange-600">₹{pending.toLocaleString('hi-IN')}</div>
+            <div className="text-xl sm:text-2xl mb-1">⏳</div>
+            <div className="text-[11px] sm:text-xs text-gray-500 font-medium">{t('pending')}</div>
+            <div className="text-xl sm:text-2xl font-bold text-orange-600 tracking-tight">₹{pending.toLocaleString('hi-IN')}</div>
           </div>
-          <div className="mt-2 pt-2 border-t border-orange-50 text-[11px] font-semibold text-orange-700">
+          <div className="mt-2 pt-2 border-t border-orange-50 text-[10px] sm:text-[11px] font-semibold text-orange-700 leading-tight">
             {totalEarned === 0
               ? (lang === 'hi' ? '🔒 100% एस्क्रो में सुरक्षित' : '🔒 100% Secured in Escrow')
               : myLots.some((l) => l.escrowState === 'FULLY_RELEASED')

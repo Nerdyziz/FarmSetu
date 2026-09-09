@@ -37,9 +37,9 @@ export default function NewLotPage() {
 
   if (submitted) {
     return (
-      <div className="px-4 pt-5 max-w-lg mx-auto">
+      <div className="px-3 sm:px-4 pt-4 sm:pt-6 max-w-xl mx-auto w-full">
         {/* Success state */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-green-200 text-center">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-green-200 text-center">
           <div className="text-6xl mb-3">✅</div>
           <h2 className="text-2xl font-bold text-green-700 mb-2">
             {lang === 'hi' ? 'PACS में जमा हो गया!' : 'Submitted to PACS!'}
@@ -112,16 +112,16 @@ export default function NewLotPage() {
   }
 
   return (
-    <div className="px-4 pt-5 space-y-5 max-w-lg mx-auto">
-      <h1 className="text-xl font-bold text-gray-800">
+    <div className="px-3 sm:px-4 pt-4 sm:pt-6 space-y-4 sm:space-y-5 max-w-xl mx-auto w-full">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
         {lang === 'hi' ? '➕ PACS में फसल जमा करें' : '➕ Submit Produce to PACS'}
       </h1>
 
       {/* Info banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-        <div className="flex items-start gap-2">
-          <span className="text-xl">ℹ️</span>
-          <p className="text-sm text-blue-800">
+      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3.5 sm:p-4">
+        <div className="flex items-start gap-2.5">
+          <span className="text-xl flex-shrink-0">ℹ️</span>
+          <p className="text-xs sm:text-sm text-blue-800 leading-relaxed">
             {lang === 'hi'
               ? 'PACS संचालक आपकी फसल की जाँच करेंगे और श्रेणी तय करेंगे। आपको सिर्फ फसल की जानकारी देनी है।'
               : 'The PACS operator will grade your produce at the hub. You just need to provide basic details.'}
@@ -129,16 +129,16 @@ export default function NewLotPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 shadow-sm space-y-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-orange-100 space-y-4">
         {/* Photo (optional) */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
             {lang === 'hi' ? '📷 फसल की फोटो (वैकल्पिक)' : '📷 Photo of Produce (Optional)'}
           </label>
           <label className="flex items-center gap-3 cursor-pointer border border-dashed border-orange-300 rounded-xl p-3 hover:bg-orange-50 transition">
-            <span className="text-2xl">📸</span>
-            <span className="text-sm text-gray-500">
-              {photoName ?? (lang === 'hi' ? 'फोटो चुनें' : 'Choose photo')}
+            <span className="text-2xl flex-shrink-0">📸</span>
+            <span className="text-xs sm:text-sm text-gray-500 truncate">
+              {photoName ?? (lang === 'hi' ? 'फोटो चुनें या कैमरा खोलें' : 'Choose photo or open camera')}
             </span>
             <input
               type="file"
@@ -152,13 +152,13 @@ export default function NewLotPage() {
 
         {/* Crop type */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
             {lang === 'hi' ? 'फसल का नाम' : 'Crop Type'}
           </label>
           <select
             value={form.cropType}
             onChange={(e) => setForm({ ...form, cropType: e.target.value })}
-            className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 sm:py-3 text-sm sm:text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400"
           >
             <option value="Orange">{lang === 'hi' ? '🍊 संतरा' : '🍊 Orange'}</option>
             <option value="Tomato">{lang === 'hi' ? '🍅 टमाटर' : '🍅 Tomato'}</option>
@@ -167,32 +167,35 @@ export default function NewLotPage() {
           </select>
         </div>
 
-        {/* Weight */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            {lang === 'hi' ? 'अनुमानित वजन (किलो)' : 'Approximate Weight (kg)'}
-          </label>
-          <input
-            type="number"
-            placeholder={lang === 'hi' ? 'जैसे: 500' : 'e.g. 500'}
-            value={form.weightKg}
-            onChange={(e) => setForm({ ...form, weightKg: e.target.value })}
-            className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base text-gray-900 bg-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
-          />
-        </div>
+        {/* Responsive Weight and Crates Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {/* Weight */}
+          <div>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              {lang === 'hi' ? 'अनुमानित वजन (किलो)' : 'Approximate Weight (kg)'}
+            </label>
+            <input
+              type="number"
+              placeholder={lang === 'hi' ? 'जैसे: 500' : 'e.g. 500'}
+              value={form.weightKg}
+              onChange={(e) => setForm({ ...form, weightKg: e.target.value })}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 sm:py-3 text-sm sm:text-base text-gray-900 bg-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
 
-        {/* Number of crates */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            {lang === 'hi' ? 'क्रेट/टोकरी की संख्या' : 'Number of Crates / Baskets'}
-          </label>
-          <input
-            type="number"
-            placeholder={lang === 'hi' ? 'जैसे: 20' : 'e.g. 20'}
-            value={form.crates}
-            onChange={(e) => setForm({ ...form, crates: e.target.value })}
-            className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base text-gray-900 bg-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
-          />
+          {/* Number of crates */}
+          <div>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              {lang === 'hi' ? 'क्रेट/टोकरी की संख्या' : 'Number of Crates / Baskets'}
+            </label>
+            <input
+              type="number"
+              placeholder={lang === 'hi' ? 'जैसे: 20' : 'e.g. 20'}
+              value={form.crates}
+              onChange={(e) => setForm({ ...form, crates: e.target.value })}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 sm:py-3 text-sm sm:text-base text-gray-900 bg-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
         </div>
 
         {/* Notes */}

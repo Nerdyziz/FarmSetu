@@ -29,39 +29,39 @@ export default function BuyerOrdersPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-5">
-      <h1 className="text-2xl font-bold text-gray-800">
+    <div className="max-w-4xl w-full space-y-5">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
         {lang === 'hi' ? '📋 मेरे ऑर्डर' : '📋 My Orders'}
       </h1>
 
       {orders.map((order) => (
         <div key={order.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-50">
             <div>
               <div className="font-bold text-gray-800">Order {order.id}</div>
               <div className="text-xs text-gray-400 mt-0.5">
                 {lang === 'hi' ? 'लॉट:' : 'Lot:'} {order.lotId} · {new Date(order.placedAt).toLocaleDateString()}
               </div>
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${deliveryColor[order.deliveryStatus] ?? 'bg-gray-100 text-gray-500'}`}>
+            <span className={`self-start sm:self-auto px-3 py-1 rounded-full text-xs font-bold ${deliveryColor[order.deliveryStatus] ?? 'bg-gray-100 text-gray-500'}`}>
               {order.deliveryStatus === 'en-route'
                 ? (lang === 'hi' ? '🚚 रास्ते में' : '🚚 En Route')
                 : (lang === 'hi' ? '✅ डिलीवर हुआ' : '✅ Delivered')}
             </span>
           </div>
 
-          <div className="px-5 py-4">
-            <div className="grid grid-cols-3 gap-3 mb-4 text-sm">
+          <div className="px-4 sm:px-5 py-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 text-xs sm:text-sm">
               <div>
-                <div className="text-xs text-gray-400">{lang === 'hi' ? 'श्रेणी' : 'Grade'}</div>
+                <div className="text-[11px] sm:text-xs text-gray-400">{lang === 'hi' ? 'श्रेणी' : 'Grade'}</div>
                 <div className={`font-bold grade-${order.lotGrade.toLowerCase()} inline-block px-2 rounded`}>Grade {order.lotGrade}</div>
               </div>
               <div>
-                <div className="text-xs text-gray-400">{lang === 'hi' ? 'मात्रा' : 'Quantity'}</div>
+                <div className="text-[11px] sm:text-xs text-gray-400">{lang === 'hi' ? 'मात्रा' : 'Quantity'}</div>
                 <div className="font-semibold text-gray-800">{order.totalKg} kg</div>
               </div>
               <div>
-                <div className="text-xs text-gray-400">{lang === 'hi' ? 'कुल मूल्य' : 'Total Value'}</div>
+                <div className="text-[11px] sm:text-xs text-gray-400">{lang === 'hi' ? 'कुल मूल्य' : 'Total Value'}</div>
                 <div className="font-semibold text-gray-800">₹{order.totalValue.toLocaleString()}</div>
               </div>
             </div>
@@ -96,7 +96,7 @@ export default function BuyerOrdersPage() {
             {order.deliveryStatus === 'en-route' && (
               <button
                 onClick={() => confirmDelivery(order.id)}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow"
+                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition shadow text-center"
               >
                 {lang === 'hi' ? '✅ डिलीवरी पक्की करें — 30% जारी होगा' : '✅ Confirm Delivery — Release 30%'}
               </button>

@@ -58,23 +58,23 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="max-w-5xl space-y-5">
+    <div className="max-w-5xl w-full space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
           {lang === 'hi' ? '🍊 उपलब्ध लॉट' : '🍊 Available Lots'}
         </h1>
-        <div className="text-sm text-gray-400">
+        <div className="text-xs sm:text-sm text-gray-400">
           {filtered.length} {lang === 'hi' ? 'लॉट मिले' : 'lots found'}
         </div>
       </div>
 
       {/* Grade filter */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {(['All', 'A', 'B', 'C'] as GradeFilter[]).map((g) => (
           <button
             key={g}
             onClick={() => setGradeFilter(g)}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition border ${
+            className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition border flex-shrink-0 ${
               gradeFilter === g
                 ? 'bg-emerald-600 text-white border-emerald-600'
                 : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-400'
@@ -90,16 +90,16 @@ export default function BrowsePage() {
         {filtered.map((lot) => {
           const isOrdered = orderedLots.includes(lot.id)
           return (
-            <div key={lot.id} className={`border-2 rounded-2xl p-5 bg-white shadow-sm ${gradeColors[lot.grade] || gradeColors.B}`}>
+            <div key={lot.id} className={`border-2 rounded-2xl p-4 sm:p-5 bg-white shadow-sm ${gradeColors[lot.grade] || gradeColors.B}`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="font-bold text-gray-800 text-lg">🍊 {lot.crop}</div>
+                  <div className="font-bold text-gray-800 text-base sm:text-lg">🍊 {lot.crop}</div>
                   <div className="text-xs text-gray-400 mt-0.5">
                     {lang === 'hi' ? 'किसान:' : 'Farmer:'} {lang === 'hi' ? lot.farmerNameHi : lot.farmerName}
                     {' · '}{(lot.farmerName || '').split(' ')[0] === 'Ramesh' ? 'Nagpur' : (lot.farmerName || '').split(' ')[0] === 'Sunita' ? 'Wardha' : 'Amravati'}
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-bold grade-${(lot.grade || 'b').toLowerCase()}`}>
+                <span className={`px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold grade-${(lot.grade || 'b').toLowerCase()}`}>
                   Grade {lot.grade}
                 </span>
               </div>
@@ -111,14 +111,14 @@ export default function BrowsePage() {
                   { label: lang === 'hi' ? 'कुल' : 'Total', value: `₹${(lot.totalValue || 0).toLocaleString()}` },
                 ].map((item, i) => (
                   <div key={i} className="bg-white/70 rounded-xl p-2 text-center">
-                    <div className="text-xs text-gray-400">{item.label}</div>
-                    <div className="font-bold text-gray-800 text-sm">{item.value}</div>
+                    <div className="text-[11px] sm:text-xs text-gray-400">{item.label}</div>
+                    <div className="font-bold text-gray-800 text-xs sm:text-sm">{item.value}</div>
                   </div>
                 ))}
               </div>
 
               {/* Quality data */}
-              <div className="flex gap-3 text-xs text-gray-500 mb-4">
+              <div className="flex flex-wrap gap-2 sm:gap-3 text-xs text-gray-500 mb-4">
                 <span>Brix: {lot.brixPct}%</span>
                 <span>•</span>
                 <span>{lang === 'hi' ? 'दाग:' : 'Blemish:'} {lot.blemishPct}%</span>
@@ -127,14 +127,14 @@ export default function BrowsePage() {
               </div>
 
               {/* Cert hash + verify */}
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                 <div className="text-xs text-gray-400 font-mono truncate flex-1">
                   🔐 {lot.certHash ? lot.certHash.slice(0, 24) + '…' : 'Not graded'}
                 </div>
                 {lot.certHash && (
                   <Link
                     href={`/operator/certificate/${lot.id}`}
-                    className="ml-2 px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold rounded-lg transition flex-shrink-0"
+                    className="self-start sm:self-auto px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold rounded-lg transition flex-shrink-0"
                   >
                     🔐 {lang === 'hi' ? 'प्रमाण-पत्र' : 'Verify Cert'}
                   </Link>
@@ -144,7 +144,7 @@ export default function BrowsePage() {
               <button
                 onClick={() => handleOrder(lot.id)}
                 disabled={isOrdered || lot.status === 'diverted'}
-                className={`w-full py-3 rounded-xl font-bold text-sm transition ${
+                className={`w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition text-center ${
                   isOrdered
                     ? 'bg-green-100 text-green-700 cursor-default'
                     : lot.status === 'diverted'
